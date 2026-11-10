@@ -1,0 +1,11 @@
+# Shared-hosting entry point: send everything to /public, where the front controller lives.
+# (Better still: set the web server's document root to /public and ignore this file.)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^$ public/ [L]
+  RewriteRule ^(?!public/)(.*)$ public/$1 [L]
+</IfModule>
+# Never serve source, config, SQL or uploads directly.
+<FilesMatch "\.(sql|md|log|env|lock|json)$">
+  Require all denied
+</FilesMatch>

@@ -1,0 +1,32 @@
+# Local/staging stack:  docker compose up --build   then   docker compose exec web php database/install.php
+services:
+  web:
+    build: .
+    ports: ["8080:80"]
+    environment:
+      DB_HOST: db
+      DB_NAME: youthconnect
+      DB_USER: ycp
+      DB_PASS: ycp-change-me
+      APP_ENV: local
+    depends_on:
+      db: { condition: service_healthy }
+    volumes:
+      - uploads:/var/www/html/storage/uploads
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: youthconnect
+      MYSQL_USER: ycp
+      MYSQL_PASSWORD: ycp-change-me
+      MYSQL_ROOT_PASSWORD: root-change-me
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot-change-me"]
+      interval: 5s
+      retries: 20
+    volumes:
+      - dbdata:/var/lib/mysql
+volumes:
+  uploads:
+  dbdata:

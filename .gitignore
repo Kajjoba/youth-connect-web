@@ -1,0 +1,11 @@
+/config/local.php
+/storage/uploads/*
+/storage/logs/*
+!/storage/uploads/.gitkeep
+!/storage/logs/.gitkeep
+.env
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
