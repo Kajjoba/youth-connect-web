@@ -339,3 +339,16 @@ details p{margin:.5em 0 1em}
 .logo,.footer-links a,.between>a,.list-cards a,.plain li>a,.back,.crumbs a,p.small>a:only-child{display:inline-flex;align-items:center;min-height:44px}
 .footer-links{gap:0}.week-body li>a,.week-body li a{display:inline-flex;align-items:center;min-height:44px}.chip{min-height:36px;display:inline-flex;align-items:center}
 }
+
+/* ---- Motion: cards drop in as you scroll, and respond to hover / press ---- */
+.course-card,.enrol-card,.badge-card,.cert-mini{transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,border-color .25s ease}
+.course-card:hover,.enrol-card:hover,.cert-mini:hover{transform:translateY(-6px);box-shadow:0 14px 28px rgba(16,36,80,.16);border-color:var(--primary)}
+.course-card:active,.enrol-card:active{transform:translateY(-2px) scale(.985)}
+.course-card:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.thumb{overflow:hidden}.thumb-letter{transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.course-card:hover .thumb-letter{transform:scale(1.18) rotate(-4deg)}
+/* scroll reveal (classes are added by app.js only when motion is allowed) */
+.rv{opacity:0;transform:translateY(-34px) scale(.96)}
+.rv.rv-in{opacity:1;transform:none;transition:opacity .55s ease var(--d,0s),transform .7s cubic-bezier(.34,1.45,.5,1) var(--d,0s)}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1!important;transform:none!important}.course-card,.enrol-card,.thumb-letter{transition:none}.course-card:hover,.enrol-card:hover{transform:none}}
+.lite .rv{opacity:1;transform:none}.lite .course-card:hover,.lite .enrol-card:hover{transform:none}

@@ -222,6 +222,37 @@
     flush();
   }
 
+  /* ---- Cards drop in as the page is scrolled (skipped for reduced-motion and Lite mode) ---- */
+  (function () {
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!('IntersectionObserver' in window) || calm || document.body.classList.contains('lite')) return;
+    var els = document.querySelectorAll('.course-card, .enrol-card, .badge-card, .cert-mini, .week');
+    if (!els.length) return;
+    function drop(list) {
+      list.forEach(function (el, n) {
+        if (el.classList.contains('rv-in')) return;
+        io.unobserve(el);
+        el.style.setProperty('--d', (n % 4) * 0.09 + 's');   // stagger cards that appear together
+        el.classList.add('rv-in');
+        // once the drop-in has finished, hand control back to normal hover/press styles
+        setTimeout(function () { el.classList.remove('rv', 'rv-in'); el.style.removeProperty('--d'); }, 1300);
+      });
+    }
+    var io = new IntersectionObserver(function (entries) {
+      drop(entries.filter(function (en) { return en.isIntersecting; }).map(function (en) { return en.target; }));
+    }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+    els.forEach(function (el) { el.classList.add('rv'); io.observe(el); });
+    // first pass: cards already on screen drop in right after the first paint (does not rely on the observer's first callback)
+    function onScreen() {
+      drop([].filter.call(document.querySelectorAll('.rv:not(.rv-in)'), function (el) {
+        var r = el.getBoundingClientRect(); return r.top < innerHeight - 30 && r.bottom > 0 && r.left < innerWidth && r.right > 0;
+      }));
+    }
+    setTimeout(onScreen, 80);
+    // safety net: never leave visible content hidden if something goes wrong
+    setTimeout(onScreen, 2500);
+  })();
+
   /* ---- Service worker: caches the app shell so the site opens fast and works offline ---- */
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     window.addEventListener('load', function () {
