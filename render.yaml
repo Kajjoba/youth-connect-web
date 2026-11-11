@@ -1,0 +1,21 @@
+# Render Blueprint: deploys this repo as a Docker web service on the free plan.
+# Fill the secret values in the Render dashboard (they are not stored in git).
+services:
+  - type: web
+    name: youthconnect
+    runtime: docker
+    plan: free
+    autoDeploy: true          # every push to GitHub redeploys the live site
+    healthCheckPath: /login
+    envVars:
+      - { key: APP_ENV, value: production }
+      - { key: APP_FORCE_HTTPS, value: "1" }
+      - { key: DB_SSL, value: "1" }
+      - { key: DB_HOST, sync: false }
+      - { key: DB_PORT, sync: false }
+      - { key: DB_NAME, sync: false }
+      - { key: DB_USER, sync: false }
+      - { key: DB_PASS, sync: false }
+      - { key: GOOGLE_CLIENT_ID, sync: false }
+      - { key: GOOGLE_CLIENT_SECRET, sync: false }
+      - { key: GOOGLE_REDIRECT_URI, sync: false }

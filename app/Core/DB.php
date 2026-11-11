@@ -13,11 +13,15 @@ class DB
         if (self::$pdo === null) {
             $c = config('db');
             $dsn = "mysql:host={$c['host']};port={$c['port']};dbname={$c['name']};charset=utf8mb4";
-            self::$pdo = new PDO($dsn, $c['user'], $c['pass'], [
+            $opts = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
-            ]);
+            ];
+            // Cloud MySQL (TiDB, Aiven, PlanetScale...) requires an encrypted connection: set DB_SSL=1.
+            // 1009 = the MySQL SSL CA option; defaults to the system certificate bundle.
+            if (!empty($c['ssl'])) $opts[1009] = $c['ssl_ca'] ?: '/etc/ssl/certs/ca-certificates.crt';
+            self::$pdo = new PDO($dsn, $c['user'], $c['pass'], $opts);
             // Keep DB timestamps in the same timezone as PHP so time_ago() is right.
             self::$pdo->exec("SET time_zone = '" . date('P') . "'");
         }

@@ -4,6 +4,20 @@ The app is plain PHP 8 + MySQL/MariaDB with no build step, so it runs on almost 
 
 You need two things on every route: **(1)** the code, **(2)** an empty MySQL database. Then load the database and set the credentials.
 
+## Recommended free route: GitHub + Render + TiDB Cloud (auto-updates on every push)
+
+1. **Database** – create a free account at https://tidbcloud.com → create a **Serverless** cluster → *Connect* → generate a password. Note host, port (4000), user, password. Create a database called `youthconnect` (SQL editor: `CREATE DATABASE youthconnect;`).
+2. **Load the data** (from your computer, one time): in PowerShell inside the project folder
+   ```
+   $env:DB_HOST='<host>'; $env:DB_PORT='4000'; $env:DB_NAME='youthconnect'; $env:DB_USER='<user>'; $env:DB_PASS='<password>'; $env:DB_SSL='1'
+   php database/install.php
+   ```
+   (creates all tables and the demo data).
+3. **Website** – https://render.com → sign in with GitHub → *New +* → *Blueprint* → pick `youth-connect-web`. Render reads `render.yaml`; enter `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` when asked (leave the Google ones blank for now).
+4. After the first build you get `https://youthconnect-xxxx.onrender.com`: share that.
+5. **Making changes**: edit locally → `git commit` → `git push`. Render rebuilds and updates the live site in a couple of minutes.
+
+Free-plan limits: the site sleeps after ~15 minutes without visitors (first load then takes ~30–60 s); uploaded evidence files are wiped on each redeploy (fine for demos; use object storage for real use).
 ## Route A – Free PHP shared hosting (e.g. InfinityFree)
 
 Simplest if you have no card and no command line.

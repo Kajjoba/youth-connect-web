@@ -23,6 +23,8 @@ return [
         'name' => $env('DB_NAME', 'youthconnect'),
         'user' => $env('DB_USER', 'root'),
         'pass' => $env('DB_PASS', ''),
+        'ssl'    => filter_var($env('DB_SSL', false), FILTER_VALIDATE_BOOLEAN),
+        'ssl_ca' => $env('DB_SSL_CA', ''),     // optional path to a CA file (system bundle is used if empty)
     ],
     'security' => [
         'login_max_attempts'   => 5,     // per email per window

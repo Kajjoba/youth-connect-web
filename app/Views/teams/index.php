@@ -1,10 +1,7 @@
 <section class="container section">
-  <div class="between"><div><h1>Collaborate</h1><p class="muted">Level Two: build a project with youth from other countries and disciplines.</p></div>
+  <div class="between"><div><h1>Collaborate</h1></div>
     <?php if ($eligible): ?><a class="btn btn-primary" href="<?= e(url('teams/new')) ?>">+ Start a team</a><?php endif; ?></div>
 
-  <div class="flow small" aria-label="How Level Two works">
-    <span>Team</span>&rarr;<span>Project</span>&rarr;<span>Tasks &amp; milestones</span>&rarr;<span>Evidence</span>&rarr;<span>Mentoring</span>&rarr;<span>Assessment</span>&rarr;<span>Validation</span>&rarr;<span>Recognition</span>
-  </div>
 
   <?php if (!$eligible): ?>
     <div class="card callout"><div><strong>Level Two is not unlocked yet</strong>
