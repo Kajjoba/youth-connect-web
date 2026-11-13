@@ -335,6 +335,33 @@ ok(newBrowser($base)->login('fatuma@youthconnect.test', 'Newpass123')['status'] 
 $old = newBrowser($base)->login('fatuma@youthconnect.test', 'Learn@12345');
 ok(has($old, 'do not match'), 'the old password no longer works');
 
+// ===================================================================================
+section('11. Admin can delete a person (safely)');
+$adm = newBrowser($base, 'admin@youthconnect.test', 'Admin@12345');
+$idOf = fn($email) => (int)DB::val('SELECT id FROM users WHERE email = ?', [$email]);
+$exists = fn($email) => (bool)DB::val('SELECT COUNT(*) FROM users WHERE email = ?', [$email]);
+$r = $adm->post('/admin/users/' . $idOf('admin@youthconnect.test') . '/delete');
+ok(has($r, 'cannot delete your own account') && $exists('admin@youthconnect.test'), 'an admin cannot delete themselves');
+$r = $adm->post('/admin/users/' . $idOf('grace@youthconnect.test') . '/delete');
+ok(has($r, 'Suspend them instead') && $exists('grace@youthconnect.test'), 'a facilitator who owns courses cannot be deleted (suspend instead)');
+$r = $adm->post('/admin/users/' . $idOf('amina@youthconnect.test') . '/delete');
+ok(has($r, 'Suspend them instead') && $exists('amina@youthconnect.test'), 'a mentor whose feedback others rely on cannot be deleted');
+ok(newBrowser($base, 'brian@youthconnect.test')->post('/admin/users/' . $idOf('peter@youthconnect.test') . '/delete')['status'] === 403 && $exists('peter@youthconnect.test'), 'a learner cannot delete anyone (403)');
+ok(newBrowser($base)->post('/admin/users/' . $idOf('peter@youthconnect.test') . '/delete', [], false)['status'] !== 200 && $exists('peter@youthconnect.test'), 'a visitor cannot delete anyone');
+$peter = $idOf('peter@youthconnect.test');
+$r = $adm->post('/admin/users/' . $peter . '/delete');
+ok(has($r, 'was deleted') && !$exists('peter@youthconnect.test'), 'admin deletes a learner');
+ok(!DB::val('SELECT COUNT(*) FROM profiles WHERE user_id = ?', [$peter]) && !DB::val('SELECT COUNT(*) FROM enrollments WHERE user_id = ?', [$peter]), 'their profile and enrolments are removed with them');
+ok(has(newBrowser($base)->login('peter@youthconnect.test', 'Learn@12345'), 'do not match'), 'the deleted person can no longer log in');
+$brianId = $idOf('brian@youthconnect.test');
+$team = DB::val('SELECT id FROM teams WHERE created_by = ?', [$brianId]);
+$r = $adm->post('/admin/users/' . $brianId . '/delete');
+ok(has($r, 'was deleted') && !$exists('brian@youthconnect.test'), 'a team creator can be deleted');
+ok($team && (int)DB::val('SELECT created_by FROM teams WHERE id = ?', [$team]) !== $brianId && (int)DB::val('SELECT COUNT(*) FROM team_members WHERE team_id = ?', [$team]) >= 2, 'their team survives and passes to another member');
+ok(!DB::val('SELECT COUNT(*) FROM evidence WHERE uploaded_by = ?', [$brianId]) && !DB::val('SELECT COUNT(*) FROM tasks WHERE assignee_id = ?', [$brianId]), 'their evidence is removed and their tasks are unassigned');
+$audit = DB::val('SELECT COUNT(*) FROM audit_log WHERE action = \'user.deleted\'');
+ok($audit >= 2, 'deletions are recorded in the audit log', "$audit entries");
+
 echo "\n";
 echo $fail === 0 ? "\033[32mALL $pass CHECKS PASSED\033[0m\n" : "\033[31m$fail FAILED, $pass passed\033[0m\n";
 exit($fail === 0 ? 0 : 1);

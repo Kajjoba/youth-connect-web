@@ -76,6 +76,7 @@ $r->get('/admin/users', [AdminController::class, 'users'], $admin);
 $r->post('/admin/users', [AdminController::class, 'createUser'], $admin);
 $r->post('/admin/users/{id}/update', [AdminController::class, 'updateUser'], $admin);
 $r->post('/admin/users/{id}/reset', [AdminController::class, 'resetPassword'], $admin);
+$r->post('/admin/users/{id}/delete', [AdminController::class, 'deleteUser'], $admin);
 $r->get('/admin/categories', [AdminController::class, 'categories'], $admin);
 $r->post('/admin/categories', [AdminController::class, 'saveCategory'], $admin);
 $r->get('/admin/projects', [AdminController::class, 'projects'], $admin);

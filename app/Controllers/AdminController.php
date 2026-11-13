@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-use App\Core\{Controller, DB, Audit};
+use App\Core\{Controller, DB, Audit, Upload};
 
 class AdminController extends Controller
 {
@@ -73,6 +73,54 @@ class AdminController extends Controller
         $this->redirect('admin/users');
     }
 
+    /**
+     * Permanently delete a person. Their personal data goes with them; shared work is kept.
+     * Refused for: yourself, the last admin, and anyone who owns courses or wrote feedback (suspend them instead).
+     */
+    public function deleteUser(string $id): void
+    {
+        $u = DB::one('SELECT id, name, email, role FROM users WHERE id = ?', [(int)$id]);
+        if (!$u) { $this->notFound(); return; }
+        $uid = (int)$u['id'];
+        $back = 'admin/users';
+        if ($uid === $this->uid()) { flash('error', 'You cannot delete your own account.'); $this->redirect($back); return; }
+        if ($u['role'] === 'admin' && (int)DB::val('SELECT COUNT(*) FROM users WHERE role = \'admin\' AND status = \'active\' AND id <> ?', [$uid]) === 0) {
+            flash('error', 'You cannot delete the last active admin.'); $this->redirect($back); return;
+        }
+        $courses = (int)DB::val('SELECT COUNT(*) FROM courses WHERE owner_id = ?', [$uid]);
+        $feedback = (int)DB::val('SELECT COUNT(*) FROM feedback WHERE author_id = ?', [$uid]);
+        if ($courses > 0 || $feedback > 0) {
+            flash('error', "{$u['name']} owns $courses course(s) and wrote $feedback piece(s) of project feedback that other people rely on, so they cannot be deleted. Suspend them instead (set Status to suspended and Save).");
+            $this->redirect($back);
+            return;
+        }
+        // Teams they created: hand over to another active member; refuse if they are the only member.
+        $teams = DB::all('SELECT id, name FROM teams WHERE created_by = ?', [$uid]);
+        $handover = [];
+        foreach ($teams as $t) {
+            $next = DB::val('SELECT user_id FROM team_members WHERE team_id = ? AND user_id <> ? AND status = \'active\' ORDER BY (role = \'lead\') DESC, joined_at LIMIT 1', [$t['id'], $uid]);
+            if (!$next) {
+                flash('error', "{$u['name']} is the only member of the team \"{$t['name']}\". Remove or hand over that team first, or suspend them instead.");
+                $this->redirect($back);
+                return;
+            }
+            $handover[(int)$t['id']] = (int)$next;
+        }
+        $files = array_column(DB::all('SELECT file_path FROM evidence WHERE uploaded_by = ? AND file_path IS NOT NULL', [$uid]), 'file_path');
+        DB::tx(function () use ($uid, $handover) {
+            foreach ($handover as $teamId => $newOwner) DB::run('UPDATE teams SET created_by = ? WHERE id = ?', [$newOwner, $teamId]);
+            DB::run('UPDATE tasks SET assignee_id = NULL WHERE assignee_id = ?', [$uid]);
+            DB::run('UPDATE submissions SET graded_by = NULL WHERE graded_by = ?', [$uid]);
+            DB::run('DELETE FROM project_messages WHERE user_id = ?', [$uid]);
+            DB::run('DELETE FROM evidence WHERE uploaded_by = ?', [$uid]);
+            DB::run('DELETE FROM users WHERE id = ?', [$uid]);    // cascades: profile, enrolments, progress, attempts, certificates, memberships, notifications...
+        });
+        foreach ($files as $rel) { $p = Upload::fullPath($rel); if ($p) @unlink($p); }
+        DB::run('DELETE FROM sessions WHERE data LIKE ?', ['%uid|i:' . $uid . ';%']);   // end any open session
+        Audit::log('user.deleted', 'user', $uid, "{$u['email']} ({$u['role']})");
+        flash('success', "{$u['name']} ({$u['email']}) was deleted.");
+        $this->redirect($back);
+    }
     public function resetPassword(string $id): void
     {
         $u = DB::one('SELECT id, email FROM users WHERE id = ?', [(int)$id]);

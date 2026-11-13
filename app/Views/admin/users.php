@@ -24,7 +24,10 @@
       <td data-label="Status"><label class="sr" for="s<?= (int)$u['id'] ?>">Status</label><select id="s<?= (int)$u['id'] ?>" name="status" form="f<?= (int)$u['id'] ?>"><option <?= $u['status'] === 'active' ? 'selected' : '' ?>>active</option><option <?= $u['status'] === 'suspended' ? 'selected' : '' ?>>suspended</option></select></td>
       <td data-label="Level 2"><label class="check"><input type="checkbox" name="level2_override" value="1" form="f<?= (int)$u['id'] ?>" <?= $u['level2_override'] ? 'checked' : '' ?>> allow</label></td>
       <td><button class="btn btn-outline btn-sm" type="submit" form="f<?= (int)$u['id'] ?>">Save</button>
-        <form method="post" action="<?= e(url('admin/users/' . $u['id'] . '/reset')) ?>" class="inline" data-confirm="Create a new temporary password for <?= e($u['email']) ?>?"><?= csrf_field() ?><button class="btn btn-outline btn-sm" type="submit">Reset password</button></form></td>
+        <form method="post" action="<?= e(url('admin/users/' . $u['id'] . '/reset')) ?>" class="inline" data-confirm="Create a new temporary password for <?= e($u['email']) ?>?"><?= csrf_field() ?><button class="btn btn-outline btn-sm" type="submit">Reset password</button></form>
+        <?php if ((int)$u['id'] !== (int)auth_user()['id']): ?>
+        <form method="post" action="<?= e(url('admin/users/' . $u['id'] . '/delete')) ?>" class="inline" data-confirm="Permanently delete <?= e($u['name']) ?> (<?= e($u['email']) ?>)? This removes their account, progress, certificates, chat messages and uploaded evidence. This cannot be undone."><?= csrf_field() ?><button class="btn btn-danger btn-sm" type="submit">Delete</button></form>
+        <?php endif; ?></td>
     </tr>
   <?php endforeach; ?></tbody></table></div>
 </section>
