@@ -1,4 +1,11 @@
-<section class="container auth">
+<section class="auth-stage">
+<?php include BASE_PATH . '/app/Views/partials/auth_art.php'; ?>
+<div class="container auth-wrap">
+  <div class="auth-pitch">
+    <h2>Start learning today. It is free.</h2>
+    <p class="lead">Courses in farming, health, energy, business and digital skills, each ending in a certificate.</p>
+    <ul class="pitch-chips"><li>🌱 Agriculture &amp; food</li><li>🤖 AI &amp; digital skills</li><li>🤝 Teamwork across borders</li><li>🎓 Certificates you can prove</li></ul>
+  </div>
   <div class="auth-card">
     <h1>Join YouthConnect for free</h1>
     <p class="muted">Takes about a minute. You can finish your profile after.</p>
@@ -52,4 +59,5 @@
     </form>
     <p class="center small">Already have an account? <a href="<?= e(url('login')) ?>">Log in</a></p>
   </div>
+</div>
 </section>
