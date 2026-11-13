@@ -29,4 +29,16 @@
     <label class="check"><input type="checkbox" name="lite_mode" value="1" <?= $p['lite_mode'] ? 'checked' : '' ?>> Lite mode: hide decorative graphics and background updates to save mobile data</label>
     <p><button class="btn btn-primary btn-lg" type="submit"><?= $welcome ? 'Save and find courses' : 'Save changes' ?></button></p>
   </form>
+  <form method="post" action="<?= e(url('profile/password')) ?>" id="password" class="card" novalidate autocomplete="off">
+    <?= csrf_field() ?>
+    <h2>Change password</h2>
+    <div class="field"><label for="current_password">Current password</label>
+      <input id="current_password" name="current_password" type="password" autocomplete="current-password" required><?= field_error('current_password') ?></div>
+    <div class="field"><label for="new_password">New password</label>
+      <input id="new_password" name="new_password" type="password" autocomplete="new-password" required minlength="8" aria-describedby="np-hint">
+      <p id="np-hint" class="hint">At least 8 characters, with a letter and a number.</p><?= field_error('new_password') ?></div>
+    <div class="field"><label for="new_password_confirmation">Confirm new password</label>
+      <input id="new_password_confirmation" name="new_password_confirmation" type="password" autocomplete="new-password" required></div>
+    <p><button class="btn btn-primary" type="submit">Change password</button></p>
+  </form>
 </section>

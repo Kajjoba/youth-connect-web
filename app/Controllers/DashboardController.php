@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-use App\Core\{Controller, DB, Audit};
+use App\Core\{Controller, DB, Audit, Auth, Session, Throttle, Validator};
 use App\Services\{Progress, Level2, Lists};
 
 class DashboardController extends Controller
@@ -30,6 +30,48 @@ class DashboardController extends Controller
         $this->view('dashboard/profile', ['p' => $p, 'welcome' => isset($_GET['welcome']), 'title' => 'My profile', 'countries' => Lists::COUNTRIES]);
     }
 
+    /** Change my own password: needs the current password, is rate-limited, and the session id is renewed. */
+    public function changePassword(): void
+    {
+        $uid = $this->uid();
+        $key = 'pwchange:' . $uid;
+        $v = Validator::make($_POST, [
+            'current_password' => 'required',
+            'new_password' => 'required|min:' . config('security.password_min') . '|max:72|strongpass|confirmed:new_password_confirmation',
+        ], ['current_password' => 'your current password', 'new_password' => 'the new password']);
+        if ($v->fails()) {
+            Session::withErrors($v->errors(), []);   // never keep passwords in the session
+            flash('error', 'Please check the password fields and try again.');
+            $this->redirect('profile#password');
+            return;
+        }
+        if (Throttle::tooMany($key, 5, (int)config('security.login_window_minutes'))) {
+            flash('error', 'Too many attempts. For your security, please wait a few minutes before trying again.');
+            $this->redirect('profile#password');
+            return;
+        }
+        $hash = (string)DB::val('SELECT password_hash FROM users WHERE id = ?', [$uid]);
+        if (!password_verify((string)$_POST['current_password'], $hash)) {
+            Throttle::hit($key);
+            Audit::log('password.change_failed', 'user', $uid);
+            Session::withErrors(['current_password' => 'That is not your current password.'], []);
+            flash('error', 'Your password was not changed.');
+            $this->redirect('profile#password');
+            return;
+        }
+        if (password_verify((string)$_POST['new_password'], $hash)) {
+            Session::withErrors(['new_password' => 'Choose a password you have not used just now.'], []);
+            flash('error', 'Your password was not changed.');
+            $this->redirect('profile#password');
+            return;
+        }
+        DB::run('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash((string)$_POST['new_password'], PASSWORD_DEFAULT), $uid]);
+        Throttle::clear($key);
+        Auth::login($uid);   // fresh session id after a credential change
+        Audit::log('password.changed', 'user', $uid, null, $uid);
+        flash('success', 'Your password has been changed.');
+        $this->redirect('profile#password');
+    }
     public function saveProfile(): void
     {
         $data = $this->validate([

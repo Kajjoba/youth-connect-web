@@ -30,6 +30,7 @@ $r->post('/logout', [AuthController::class, 'logout'], $auth);
 $r->get('/my-learning', [DashboardController::class, 'index'], $auth);
 $r->get('/profile', [DashboardController::class, 'profile'], $auth);
 $r->post('/profile', [DashboardController::class, 'saveProfile'], $auth);
+$r->post('/profile/password', [DashboardController::class, 'changePassword'], $auth);
 $r->get('/notifications', [DashboardController::class, 'notifications'], $auth);
 $r->post('/notifications/read', [DashboardController::class, 'markRead'], $auth);
 

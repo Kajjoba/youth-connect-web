@@ -320,6 +320,21 @@ ok($sqli['status'] === 200 && has($sqli, 'No courses match'), 'SQL injection att
 $sess = DB::val('SELECT COUNT(*) FROM sessions');
 ok($sess > 0, 'sessions are stored in the database (stateless web nodes)', "$sess rows");
 
+// ===================================================================================
+section('10. Change my own password');
+$cp = newBrowser($base, 'fatuma@youthconnect.test');
+$r = $cp->post('/profile/password', ['current_password' => 'WRONG', 'new_password' => 'Newpass123', 'new_password_confirmation' => 'Newpass123']);
+ok(has($r, 'not your current password'), 'wrong current password is refused');
+$r = $cp->post('/profile/password', ['current_password' => 'Learn@12345', 'new_password' => 'short', 'new_password_confirmation' => 'short']);
+ok(!has($r, 'Your password has been changed'), 'weak new password is refused');
+$r = $cp->post('/profile/password', ['current_password' => 'Learn@12345', 'new_password' => 'Newpass123', 'new_password_confirmation' => 'Different1']);
+ok(!has($r, 'Your password has been changed'), 'mismatched confirmation is refused');
+$r = $cp->post('/profile/password', ['current_password' => 'Learn@12345', 'new_password' => 'Newpass123', 'new_password_confirmation' => 'Newpass123']);
+ok(has($r, 'Your password has been changed'), 'correct current password changes the password');
+ok(newBrowser($base)->login('fatuma@youthconnect.test', 'Newpass123')['status'] < 400 && has(newBrowser($base, 'fatuma@youthconnect.test', 'Newpass123')->get('/my-learning'), 'My learning'), 'the new password works for logging in');
+$old = newBrowser($base)->login('fatuma@youthconnect.test', 'Learn@12345');
+ok(has($old, 'do not match'), 'the old password no longer works');
+
 echo "\n";
 echo $fail === 0 ? "\033[32mALL $pass CHECKS PASSED\033[0m\n" : "\033[31m$fail FAILED, $pass passed\033[0m\n";
 exit($fail === 0 ? 0 : 1);
