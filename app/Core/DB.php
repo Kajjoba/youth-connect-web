@@ -20,7 +20,11 @@ class DB
             ];
             // Cloud MySQL (TiDB, Aiven, PlanetScale...) requires an encrypted connection: set DB_SSL=1.
             // 1009 = the MySQL SSL CA option; defaults to the system certificate bundle.
-            if (!empty($c['ssl'])) $opts[1009] = $c['ssl_ca'] ?: '/etc/ssl/certs/ca-certificates.crt';
+            if (!empty($c['ssl'])) {
+                $ca = $c['ssl_ca'];
+                if (!$ca) foreach (['/etc/ssl/certs/ca-certificates.crt', (string)ini_get('openssl.cafile'), (string)ini_get('curl.cainfo')] as $cand) { if ($cand !== '' && is_file($cand)) { $ca = $cand; break; } }
+                if ($ca) $opts[1009] = $ca;
+            }
             self::$pdo = new PDO($dsn, $c['user'], $c['pass'], $opts);
             // Keep DB timestamps in the same timezone as PHP so time_ago() is right.
             self::$pdo->exec("SET time_zone = '" . date('P') . "'");
