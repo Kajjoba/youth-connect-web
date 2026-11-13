@@ -79,13 +79,14 @@ $totalReviews = max(1, array_sum($dist));
             <?php $bits = [];
               if ($m['counts']['reading']) $bits[] = $m['counts']['reading'] . ' reading' . ($m['counts']['reading'] == 1 ? '' : 's');
               if ($m['counts']['video']) $bits[] = $m['counts']['video'] . ' video' . ($m['counts']['video'] == 1 ? '' : 's');
+              if ($m['counts']['audio']) $bits[] = $m['counts']['audio'] . ' audio lesson' . ($m['counts']['audio'] == 1 ? '' : 's');
               if ($m['counts']['discussion']) $bits[] = $m['counts']['discussion'] . ' discussion' . ($m['counts']['discussion'] == 1 ? '' : 's');
               if ($m['quiz']) $bits[] = '1 quiz (' . (int)$m['quiz']['questions'] . ' questions)';
               if ($m['assignment']) $bits[] = '1 graded assignment';
               echo e(implode(' · ', $bits) ?: 'Coming soon'); ?></p>
           <ul class="items">
             <?php foreach ($m['lessons'] as $l): ?>
-              <li><span class="ico ico-<?= e($l['type']) ?>"><?= $l['type'] === 'video' ? '▶' : ($l['type'] === 'discussion' ? '💬' : '📄') ?></span>
+              <li><span class="ico ico-<?= e($l['type']) ?>"><?= $l['type'] === 'video' ? '▶' : ($l['type'] === 'audio' ? '🎧' : ($l['type'] === 'discussion' ? '💬' : '📄')) ?></span>
                 <?php if ($l['is_preview'] || $enrollment): ?><a href="<?= e(url('learn/' . $course['slug'] . '/lesson/' . $l['id'])) ?>"><?= e($l['title']) ?></a><?php else: ?><?= e($l['title']) ?><?php endif; ?>
                 <span class="muted small"><?= (int)$l['minutes'] ?> min</span><?= $l['is_preview'] ? ' <span class="badge badge-green">Preview</span>' : '' ?></li>
             <?php endforeach; ?>

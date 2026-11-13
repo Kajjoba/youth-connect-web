@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-use App\Core\{Controller, DB, Policy, Audit, Notify};
+use App\Core\{Controller, DB, Policy, Audit, Notify, Upload};
 use App\Services\Progress;
 
 /** Facilitator (and admin) tools: build courses week by week, quizzes, assignments; grade work. */
@@ -86,7 +86,8 @@ class ManageController extends Controller
                 (SELECT COUNT(*) FROM questions q JOIN quizzes z ON z.id = q.quiz_id WHERE z.module_id = m.id) AS questions,
                 (SELECT COUNT(*) FROM assignments a WHERE a.module_id = m.id) AS has_assignment
             FROM modules m WHERE m.course_id = ? ORDER BY week_no', [$course['id']]);
-        $this->view('manage/course_edit', ['course' => $course, 'modules' => $modules, 'categories' => DB::all('SELECT * FROM categories ORDER BY name'), 'title' => 'Edit ' . $course['title']]);
+        $discussion = DB::one('SELECT COUNT(*) AS posts, COALESCE(SUM(reported),0) AS reported FROM discussion_posts WHERE course_id = ?', [$course['id']]);
+        $this->view('manage/course_edit', ['course' => $course, 'modules' => $modules, 'discussion' => $discussion, 'categories' => DB::all('SELECT * FROM categories ORDER BY name'), 'title' => 'Edit ' . $course['title']]);
     }
 
     public function updateCourse(string $id): void
@@ -173,6 +174,7 @@ class ManageController extends Controller
     {
         $m = $this->module($id);
         if (!$m) return;
+        foreach (DB::all('SELECT audio_path FROM lessons WHERE module_id = ? AND audio_path IS NOT NULL', [$m['id']]) as $a) Upload::delete($a['audio_path']);
         DB::run('DELETE FROM modules WHERE id = ?', [$m['id']]);
         flash('success', 'Week removed.');
         $this->redirect("manage/courses/{$m['course_id']}");
@@ -182,7 +184,7 @@ class ManageController extends Controller
 
     private function lessonRules(): array
     {
-        return ['type' => 'required|in:reading,video,discussion', 'title' => 'required|min:3|max:160', 'content' => 'max:20000',
+        return ['type' => 'required|in:reading,video,audio,discussion', 'title' => 'required|min:3|max:160', 'content' => 'max:20000',
                 'video_url' => 'url|max:300', 'minutes' => 'required|between:1,600'];
     }
 
@@ -200,13 +202,59 @@ class ManageController extends Controller
         $d = $this->validate($this->lessonRules(), "manage/modules/{$m['id']}");
         if ($d === null) return;
         if (!$this->validVideo($d['video_url'])) { flash('error', 'Videos must be YouTube links.'); $this->redirect("manage/modules/{$m['id']}"); return; }
+        $audio = null;
+        if ($d['type'] === 'audio') {
+            $audio = $this->audioUpload(true);
+            if (is_string($audio)) { flash('error', $audio); $this->redirect("manage/modules/{$m['id']}"); return; }
+        }
         $pos = (int)DB::val('SELECT COALESCE(MAX(position),0)+1 FROM lessons WHERE module_id = ?', [$m['id']]);
-        DB::run('INSERT INTO lessons (module_id, position, type, title, content, video_url, minutes, is_preview) VALUES (?,?,?,?,?,?,?,?)',
-            [$m['id'], $pos, $d['type'], $d['title'], $d['content'], $d['video_url'], $d['minutes'], isset($_POST['is_preview']) ? 1 : 0]);
+        DB::run('INSERT INTO lessons (module_id, position, type, title, content, video_url, audio_path, audio_name, minutes, is_preview) VALUES (?,?,?,?,?,?,?,?,?,?)',
+            [$m['id'], $pos, $d['type'], $d['title'], $d['content'], $d['video_url'], $audio['path'] ?? null, $audio['name'] ?? null, $d['minutes'], isset($_POST['is_preview']) ? 1 : 0]);
         flash('success', 'Lesson added.');
         $this->redirect("manage/modules/{$m['id']}");
     }
 
+    /** Audio file from the lesson form: null if none was chosen (and none required), error string, or the stored-file info. */
+    private function audioUpload(bool $required)
+    {
+        $f = $_FILES['audio'] ?? null;
+        if (!$f || ($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return $required ? 'Choose an audio file (MP3, M4A, OGG or WAV) for an audio lesson.' : null;
+        if (in_array($f['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) return 'That audio file is larger than this server allows (' . upload_limit_mb() . ' MB). Compress it or use a shorter recording.';
+        return Upload::store($f, 'audio');
+    }
+
+    /** Move a week up or down: renumbers all weeks 1..n so the order is always clean. */
+    public function moveModule(string $id): void
+    {
+        $m = $this->module($id);
+        if (!$m) return;
+        $ids = array_map('intval', array_column(DB::all('SELECT id FROM modules WHERE course_id = ? ORDER BY week_no, id', [$m['course_id']]), 'id'));
+        $i = array_search((int)$m['id'], $ids, true);
+        $j = $i === false ? false : $i + (($_POST['dir'] ?? '') === 'up' ? -1 : 1);
+        if ($j !== false && isset($ids[$j])) {
+            [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
+            DB::tx(function () use ($ids) {
+                foreach ($ids as $k => $mid) DB::run('UPDATE modules SET week_no = ? WHERE id = ?', [100 + $k + 1, $mid]);   // two passes: (course, week) is unique
+                foreach ($ids as $k => $mid) DB::run('UPDATE modules SET week_no = ? WHERE id = ?', [$k + 1, $mid]);
+            });
+        }
+        $this->redirect("manage/courses/{$m['course_id']}");
+    }
+
+    /** Move a lesson up or down within its week. */
+    public function moveLesson(string $id): void
+    {
+        $l = $this->lesson($id);
+        if (!$l) return;
+        $ids = array_map('intval', array_column(DB::all('SELECT id FROM lessons WHERE module_id = ? ORDER BY position, id', [$l['module_id']]), 'id'));
+        $i = array_search((int)$l['id'], $ids, true);
+        $j = $i === false ? false : $i + (($_POST['dir'] ?? '') === 'up' ? -1 : 1);
+        if ($j !== false && isset($ids[$j])) {
+            [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
+            DB::tx(function () use ($ids) { foreach ($ids as $k => $lid) DB::run('UPDATE lessons SET position = ? WHERE id = ?', [$k + 1, $lid]); });
+        }
+        $this->redirect("manage/modules/{$l['module_id']}");
+    }
     public function editLesson(string $id): void
     {
         $l = $this->lesson($id);
@@ -220,8 +268,16 @@ class ManageController extends Controller
         $d = $this->validate($this->lessonRules() + ['position' => 'required|between:1,200'], "manage/lessons/{$l['id']}");
         if ($d === null) return;
         if (!$this->validVideo($d['video_url'])) { flash('error', 'Videos must be YouTube links.'); $this->redirect("manage/lessons/{$l['id']}"); return; }
-        DB::run('UPDATE lessons SET type=?, title=?, content=?, video_url=?, minutes=?, position=?, is_preview=? WHERE id=?',
-            [$d['type'], $d['title'], $d['content'], $d['video_url'], $d['minutes'], $d['position'], isset($_POST['is_preview']) ? 1 : 0, $l['id']]);
+        $path = $l['audio_path']; $name = $l['audio_name'];
+        if ($d['type'] === 'audio') {
+            $new = $this->audioUpload(!$l['audio_path']);
+            if (is_string($new)) { flash('error', $new); $this->redirect("manage/lessons/{$l['id']}"); return; }
+            if ($new) { Upload::delete($l['audio_path']); $path = $new['path']; $name = $new['name']; }
+        } elseif ($l['audio_path']) {   // no longer an audio lesson: remove the stored file
+            Upload::delete($l['audio_path']); $path = null; $name = null;
+        }
+        DB::run('UPDATE lessons SET type=?, title=?, content=?, video_url=?, audio_path=?, audio_name=?, minutes=?, position=?, is_preview=? WHERE id=?',
+            [$d['type'], $d['title'], $d['content'], $d['video_url'], $path, $name, $d['minutes'], $d['position'], isset($_POST['is_preview']) ? 1 : 0, $l['id']]);
         flash('success', 'Lesson saved.');
         $this->redirect("manage/modules/{$l['module_id']}");
     }
@@ -230,6 +286,7 @@ class ManageController extends Controller
     {
         $l = $this->lesson($id);
         if (!$l) return;
+        Upload::delete($l['audio_path']);
         DB::run('DELETE FROM lessons WHERE id = ?', [$l['id']]);
         flash('success', 'Lesson removed.');
         $this->redirect("manage/modules/{$l['module_id']}");

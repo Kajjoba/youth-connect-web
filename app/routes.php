@@ -25,6 +25,7 @@ $r->post('/register', [AuthController::class, 'register'], ['guest']);
 $r->get('/auth/google', [\App\Controllers\GoogleAuthController::class, 'start'], ['guest']);
 $r->get('/auth/google/callback', [\App\Controllers\GoogleAuthController::class, 'callback'], ['guest']);
 $r->post('/logout', [AuthController::class, 'logout'], $auth);
+$r->get('/media/lesson/{id}/audio', [\App\Controllers\MediaController::class, 'lessonAudio'], $auth);
 
 // ---- Level One: learner -----------------------------------------------------
 $r->get('/my-learning', [DashboardController::class, 'index'], $auth);
@@ -47,6 +48,10 @@ $r->get('/learn/{slug}/assignment/{id}', [LearnController::class, 'assignment'],
 $r->post('/learn/{slug}/assignment/{id}', [LearnController::class, 'submitAssignment'], $auth);
 $r->get('/learn/{slug}/discussion', [LearnController::class, 'discussion'], $auth);
 $r->post('/learn/{slug}/discussion', [LearnController::class, 'post'], $auth);
+$r->post('/learn/{slug}/discussion/{id}/delete', [LearnController::class, 'deletePost'], $auth);
+$r->post('/learn/{slug}/discussion/{id}/pin', [LearnController::class, 'pinPost'], $auth);
+$r->post('/learn/{slug}/discussion/{id}/report', [LearnController::class, 'reportPost'], $auth);
+$r->post('/learn/{slug}/discussion/{id}/dismiss', [LearnController::class, 'dismissReport'], $auth);
 
 // ---- Facilitator / admin: course management ---------------------------------
 $r->get('/manage/courses', [ManageController::class, 'courses'], $staff);
@@ -60,6 +65,8 @@ $r->get('/manage/courses/{id}/learners', [ManageController::class, 'learners'], 
 $r->get('/manage/modules/{id}', [ManageController::class, 'editModule'], $staff);
 $r->post('/manage/modules/{id}', [ManageController::class, 'updateModule'], $staff);
 $r->post('/manage/modules/{id}/delete', [ManageController::class, 'deleteModule'], $staff);
+$r->post('/manage/modules/{id}/move', [ManageController::class, 'moveModule'], $staff);
+$r->post('/manage/lessons/{id}/move', [ManageController::class, 'moveLesson'], $staff);
 $r->post('/manage/modules/{id}/lessons', [ManageController::class, 'addLesson'], $staff);
 $r->post('/manage/modules/{id}/questions', [ManageController::class, 'addQuestion'], $staff);
 $r->post('/manage/modules/{id}/assignment', [ManageController::class, 'saveAssignment'], $staff);

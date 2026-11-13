@@ -367,3 +367,11 @@ details p{margin:.5em 0 1em}
 @media (prefers-reduced-motion:reduce){.is-float{animation:none}.confetti-bit{display:none}}.lite .is-float{animation:none}
 .confetti-bit{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;pointer-events:none;z-index:50;animation:ycp-fall var(--t,2.8s) ease-in var(--dl,0s) forwards}
 @keyframes ycp-fall{to{transform:translate3d(var(--x,0),105vh,0) rotate(var(--r,540deg));opacity:.9}}
+
+/* ---- Audio lessons, moderation ---- */
+.audio-box{background:var(--soft);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:12px 0}
+.audio-box audio{width:100%;margin:6px 0}.audio-title{margin:0;font-weight:600}
+.flag{color:var(--danger);font-weight:700}
+.post.pinned{border-color:var(--accent);background:#fffbea}.pin-tag{font-size:.8rem;font-weight:700;color:var(--warn)}
+.post-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.post-actions .linklike{font-size:.85rem}
+.badge-warn-solid{background:var(--danger-soft);color:var(--danger)}

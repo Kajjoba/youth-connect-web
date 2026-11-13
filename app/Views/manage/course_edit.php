@@ -5,6 +5,7 @@
     <div class="row">
       <a class="btn btn-outline" href="<?= e(url('course/' . $course['slug'])) ?>">View page</a>
       <a class="btn btn-outline" href="<?= e(url('manage/courses/' . $course['id'] . '/learners')) ?>">Learners</a>
+      <a class="btn btn-outline" href="<?= e(url('learn/' . $course['slug'] . '/discussion')) ?>">Discussion (<?= (int)$discussion['posts'] ?><?= $discussion['reported'] ? ', <span class="flag">' . (int)$discussion['reported'] . ' reported</span>' : '' ?>)</a>
       <form method="post" action="<?= e(url('manage/courses/' . $course['id'] . '/status')) ?>"><?= csrf_field() ?>
         <?php if ($course['status'] === 'published'): ?><input type="hidden" name="status" value="draft"><button class="btn btn-outline" type="submit">Unpublish</button>
         <?php else: ?><input type="hidden" name="status" value="published"><button class="btn btn-primary" type="submit">Publish</button><?php endif; ?></form>
@@ -15,8 +16,9 @@
   <p class="muted">Each week is a module with lessons, a quiz and an optional graded assignment.</p>
   <div class="table-wrap"><table class="table">
     <thead><tr><th>Week</th><th>Title</th><th>Lessons</th><th>Quiz questions</th><th>Assignment</th><th></th></tr></thead><tbody>
-    <?php foreach ($modules as $m): ?>
-      <tr><td data-label="Week"><?= (int)$m['week_no'] ?></td><td data-label="Title"><a href="<?= e(url('manage/modules/' . $m['id'])) ?>"><strong><?= e($m['title']) ?></strong></a></td>
+    <?php foreach ($modules as $mi => $m): ?>
+      <tr><td data-label="Week"><?= (int)$m['week_no'] ?>
+        <form method="post" action="<?= e(url('manage/modules/' . $m['id'] . '/move')) ?>" class="inline"><?= csrf_field() ?><button class="btn btn-outline btn-sm" name="dir" value="up" type="submit" aria-label="Move week up" <?= $mi === 0 ? 'disabled' : '' ?>>▲</button><button class="btn btn-outline btn-sm" name="dir" value="down" type="submit" aria-label="Move week down" <?= $mi === count($modules) - 1 ? 'disabled' : '' ?>>▼</button></form></td><td data-label="Title"><a href="<?= e(url('manage/modules/' . $m['id'])) ?>"><strong><?= e($m['title']) ?></strong></a></td>
         <td data-label="Lessons"><?= (int)$m['lessons'] ?></td>
         <td data-label="Quiz"><?= (int)$m['questions'] ?><?= $m['questions'] == 0 ? ' <span class="badge badge-warn">no quiz yet</span>' : '' ?></td>
         <td data-label="Assignment"><?= $m['has_assignment'] ? 'Yes' : '–' ?></td>

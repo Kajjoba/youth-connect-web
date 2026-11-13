@@ -59,7 +59,7 @@ class Courses
             $m['lessons'] = $x['lessons'] ?? [];
             $m['quiz'] = $x['quiz'] ?? null;
             $m['assignment'] = $x['assignment'] ?? null;
-            $cnt = ['reading' => 0, 'video' => 0, 'discussion' => 0];
+            $cnt = ['reading' => 0, 'video' => 0, 'audio' => 0, 'discussion' => 0];
             $mins = 0;
             foreach ($m['lessons'] as $l) { $cnt[$l['type']]++; $mins += (int)$l['minutes']; }
             $m['counts'] = $cnt;

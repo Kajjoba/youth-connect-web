@@ -15,23 +15,26 @@
 
   <h2>Lessons (<?= count($lessons) ?>)</h2>
   <ul class="plain list-cards">
-    <?php foreach ($lessons as $l): ?>
-      <li class="card row between"><span><?= e($l['position']) ?>. <strong><?= e($l['title']) ?></strong> <span class="muted small"><?= e($l['type']) ?> · <?= (int)$l['minutes'] ?> min<?= $l['is_preview'] ? ' · preview' : '' ?></span></span>
-        <span class="row"><a class="btn btn-outline btn-sm" href="<?= e(url('manage/lessons/' . $l['id'])) ?>">Edit</a>
+    <?php foreach ($lessons as $li => $l): ?>
+      <li class="card row between"><span><?= (int)($li + 1) ?>. <strong><?= e($l['title']) ?></strong> <span class="muted small"><?= e($l['type'] === 'audio' ? '🎧 audio' : $l['type']) ?> · <?= (int)$l['minutes'] ?> min<?= $l['is_preview'] ? ' · preview' : '' ?></span></span>
+        <span class="row">
+        <form method="post" action="<?= e(url('manage/lessons/' . $l['id'] . '/move')) ?>" class="inline"><?= csrf_field() ?><button class="btn btn-outline btn-sm" name="dir" value="up" type="submit" aria-label="Move lesson up" <?= $li === 0 ? 'disabled' : '' ?>>▲</button> <button class="btn btn-outline btn-sm" name="dir" value="down" type="submit" aria-label="Move lesson down" <?= $li === count($lessons) - 1 ? 'disabled' : '' ?>>▼</button></form><a class="btn btn-outline btn-sm" href="<?= e(url('manage/lessons/' . $l['id'])) ?>">Edit</a>
         <form method="post" action="<?= e(url('manage/lessons/' . $l['id'] . '/delete')) ?>" data-confirm="Delete this lesson?"><?= csrf_field() ?><button class="btn btn-danger btn-sm" type="submit">Delete</button></form></span></li>
     <?php endforeach; ?>
   </ul>
   <details class="card" <?= $lessons ? '' : 'open' ?>><summary><strong>+ Add a lesson</strong></summary>
-    <form method="post" action="<?= e(url('manage/modules/' . $m['id'] . '/lessons')) ?>" novalidate>
+    <form method="post" action="<?= e(url('manage/modules/' . $m['id'] . '/lessons')) ?>" enctype="multipart/form-data" novalidate>
       <?= csrf_field() ?>
       <div class="field-row">
         <div class="field"><label for="l-title">Lesson title</label><input id="l-title" name="title" required maxlength="160"><?= field_error('title') ?></div>
-        <div class="field"><label for="l-type">Type</label><select id="l-type" name="type"><option value="reading">Reading</option><option value="video">Video (YouTube link)</option><option value="discussion">Discussion prompt</option></select></div>
+        <div class="field"><label for="l-type">Type</label><select id="l-type" name="type"><option value="reading">Reading</option><option value="video">Video (YouTube link)</option><option value="audio">Audio (upload a file)</option><option value="discussion">Discussion prompt</option></select></div>
         <div class="field"><label for="l-min">Minutes</label><input id="l-min" name="minutes" type="number" min="1" value="10" required></div>
       </div>
       <div class="field"><label for="l-content">Lesson text</label><textarea id="l-content" name="content" rows="8"></textarea>
         <p class="hint">Blank line = new paragraph. Start a line with "## " for a heading, and lines with "- " for bullets.</p></div>
       <div class="field"><label for="l-video">YouTube link (optional)</label><input id="l-video" name="video_url" type="url" maxlength="300" placeholder="https://www.youtube.com/watch?v=…"></div>
+      <div class="field"><label for="l-audio">Audio file (only for Audio lessons)</label><input id="l-audio" name="audio" type="file" accept=".mp3,.m4a,.ogg,.wav,audio/*">
+        <p class="hint">MP3, M4A, OGG or WAV, up to <?= upload_limit_mb() ?> MB. Short recordings (5 to 10 minutes) use less mobile data. Put the key points in the lesson text above so learners can read instead of listening.</p></div>
       <label class="check"><input type="checkbox" name="is_preview" value="1"> Let visitors preview this lesson before enrolling</label>
       <p><button class="btn btn-primary" type="submit">Add lesson</button></p>
     </form>

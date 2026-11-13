@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-use App\Core\{Controller, DB, Policy, Audit, Throttle};
+use App\Core\{Controller, DB, Policy, Audit, Notify, Throttle};
 use App\Services\{Courses, Progress};
 
 class LearnController extends Controller
@@ -206,6 +206,7 @@ class LearnController extends Controller
                           WHERE d.course_id = ? ORDER BY d.id DESC LIMIT 100', [$c['course']['id']]);
         $top = []; $replies = [];
         foreach ($posts as $p) { if ($p['parent_id']) $replies[$p['parent_id']][] = $p; else $top[] = $p; }
+        usort($top, fn($a, $b) => [(int)$b['pinned'], (int)$b['id']] <=> [(int)$a['pinned'], (int)$a['id']]);   // pinned first, then newest
         foreach ($replies as &$r) $r = array_reverse($r);
         unset($r);
         $this->view('learn/discussion', $c + compact('top', 'replies') + ['title' => 'Discussion – ' . $c['course']['title'], 'active' => ['discussion', 0]]);
@@ -228,6 +229,66 @@ class LearnController extends Controller
         DB::run('INSERT INTO discussion_posts (course_id, user_id, parent_id, body) VALUES (?,?,?,?)',
             [$c['course']['id'], $this->uid(), $parent ? ($parent['parent_id'] ?: $parent['id']) : null, $data['body']]);
         flash('success', 'Posted.');
+        $this->redirect("learn/$slug/discussion");
+    }
+
+    // ---- discussion moderation ---------------------------------------------------
+
+    private function loadPost(string $slug, string $id, bool $staffOnly): ?array
+    {
+        $c = $this->ctx($slug, !$this->isManager($slug));
+        if (!$c) return null;
+        $p = DB::one('SELECT * FROM discussion_posts WHERE id = ? AND course_id = ?', [(int)$id, $c['course']['id']]);
+        if (!$p) { $this->notFound(); return null; }
+        if ($staffOnly && !$c['manage']) { $this->forbidden('Only the course facilitator or an admin can do this.'); return null; }
+        return $p + ['_course' => $c['course'], '_manage' => $c['manage']];
+    }
+
+    /** Staff can delete any post; learners can delete their own. A deleted post takes its replies with it. */
+    public function deletePost(string $slug, string $id): void
+    {
+        $p = $this->loadPost($slug, $id, false);
+        if (!$p) return;
+        if (!$p['_manage'] && (int)$p['user_id'] !== $this->uid()) { $this->forbidden('You can only delete your own posts.'); return; }
+        DB::run('DELETE FROM discussion_posts WHERE id = ? OR parent_id = ?', [$p['id'], $p['id']]);
+        if ($p['_manage'] && (int)$p['user_id'] !== $this->uid()) Audit::log('discussion.removed', 'course', (int)$p['course_id'], "post {$p['id']} by user {$p['user_id']}");
+        flash('success', 'Post removed.');
+        $this->redirect("learn/$slug/discussion");
+    }
+
+    public function pinPost(string $slug, string $id): void
+    {
+        $p = $this->loadPost($slug, $id, true);
+        if (!$p) return;
+        if ($p['parent_id']) { $this->notFound(); return; }
+        DB::run('UPDATE discussion_posts SET pinned = ? WHERE id = ?', [$p['pinned'] ? 0 : 1, $p['id']]);
+        flash('success', $p['pinned'] ? 'Post unpinned.' : 'Post pinned to the top.');
+        $this->redirect("learn/$slug/discussion");
+    }
+
+    /** Any learner can flag a post for the facilitator; the course owner is notified. */
+    public function reportPost(string $slug, string $id): void
+    {
+        $p = $this->loadPost($slug, $id, false);
+        if (!$p) return;
+        if ((int)$p['user_id'] === $this->uid()) { flash('info', 'That is your own post.'); $this->redirect("learn/$slug/discussion"); return; }
+        $key = 'report:' . $this->uid();
+        if (Throttle::tooMany($key, 10, 10)) { flash('error', 'Too many reports in a short time. Please wait a few minutes.'); $this->redirect("learn/$slug/discussion"); return; }
+        Throttle::hit($key);
+        if (!$p['reported']) {
+            DB::run('UPDATE discussion_posts SET reported = 1 WHERE id = ?', [$p['id']]);
+            Notify::to((int)$p['_course']['owner_id'], 'A discussion post was reported in "' . $p['_course']['title'] . '". Please review it.', "learn/$slug/discussion");
+        }
+        flash('success', 'Thank you. The facilitator has been told and will take a look.');
+        $this->redirect("learn/$slug/discussion");
+    }
+
+    public function dismissReport(string $slug, string $id): void
+    {
+        $p = $this->loadPost($slug, $id, true);
+        if (!$p) return;
+        DB::run('UPDATE discussion_posts SET reported = 0 WHERE id = ?', [$p['id']]);
+        flash('success', 'Report cleared. The post stays.');
         $this->redirect("learn/$slug/discussion");
     }
 }

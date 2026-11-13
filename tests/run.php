@@ -344,6 +344,88 @@ $old = newBrowser($base)->login('fatuma@youthconnect.test', 'Learn@12345');
 ok(has($old, 'do not match'), 'the old password no longer works');
 
 // ===================================================================================
+section('12. Facilitator content tools: audio lessons, ordering, discussion moderation');
+$gr = newBrowser($base, 'grace@youthconnect.test', 'Facilitate@123');
+$aiSlug = 'ai-literacy-for-everyday-life';
+$aiId = (int)DB::val('SELECT id FROM courses WHERE slug = ?', [$aiSlug]);
+$gr->post("/manage/courses/$aiId/weeks", ['title' => 'Audio demo week']);
+$wk = (int)DB::val('SELECT id FROM modules WHERE course_id = ? ORDER BY week_no DESC LIMIT 1', [$aiId]);
+$mp3 = sys_get_temp_dir() . '/ycp_lesson.mp3';
+file_put_contents($mp3, "ID3\x03\x00\x00\x00\x00\x00\x00" . str_repeat("\xFF\xFB\x90\x00" . str_repeat("\x00", 413), 12));
+$fake = sys_get_temp_dir() . '/ycp_fake.mp3'; file_put_contents($fake, 'plain text pretending to be audio');
+$lessonFields = ['title' => 'Listen: farming tips', 'type' => 'audio', 'minutes' => '6', 'content' => 'Notes for the audio.', 'video_url' => ''];
+$r = $gr->post("/manage/modules/$wk/lessons", $lessonFields);
+ok(has($r, 'Choose an audio file'), 'an audio lesson without a file is refused');
+$r = $gr->post("/manage/modules/$wk/lessons", $lessonFields + ['audio' => new CURLFile($fake, 'audio/mpeg', 'fake.mp3')]);
+ok(has($r, 'does not match') && !DB::val('SELECT COUNT(*) FROM lessons WHERE module_id = ?', [$wk]), 'a file that is not really audio is refused (content is checked, not just the name)');
+$r = $gr->post("/manage/modules/$wk/lessons", $lessonFields + ['audio' => new CURLFile($mp3, 'audio/mpeg', 'farming-tips.mp3')]);
+$lid = (int)DB::val('SELECT id FROM lessons WHERE module_id = ? AND type = \'audio\'', [$wk]);
+$apath = DB::val('SELECT audio_path FROM lessons WHERE id = ?', [$lid]);
+ok(has($r, 'Lesson added') && $lid && $apath && \App\Core\Upload::fullPath($apath) !== null, 'an audio lesson is created and the file is stored outside the web root');
+ok(!is_file(__DIR__ . '/../public/' . $apath), 'the audio file is not reachable directly from the web');
+
+$fat = newBrowser($base, 'joseph@youthconnect.test');
+ok(in_array($fat->get("/media/lesson/$lid/audio")['status'], [403, 404], true), 'a learner who is not enrolled cannot play the audio');
+ok(in_array(newBrowser($base)->get("/media/lesson/$lid/audio", [], false)['status'], [301, 302, 303, 401, 403, 404], true), 'a visitor who is not logged in cannot play the audio');
+$fat->post("/course/$aiSlug/enroll");
+$a = $fat->get("/media/lesson/$lid/audio");
+ok($a['status'] === 200 && strpos($a['headers']['content-type'] ?? '', 'audio/mpeg') === 0 && ($a['headers']['accept-ranges'] ?? '') === 'bytes', 'an enrolled learner can play it (served as audio with Range support)');
+$p = $fat->req('GET', "/media/lesson/$lid/audio", [], ['Range: bytes=0-99'], false);
+ok($p['status'] === 206 && strlen($p['body']) === 100 && strpos($p['headers']['content-range'] ?? '', 'bytes 0-99/') === 0, 'seeking works: a Range request returns just those bytes (206)');
+$bad = $fat->req('GET', "/media/lesson/$lid/audio", [], ['Range: bytes=99999999-'], false);
+ok($bad['status'] === 416, 'an impossible Range is answered with 416');
+$page = $fat->get("/learn/$aiSlug/lesson/$lid");
+ok(has($page, '<audio') && has($page, "media/lesson/$lid/audio") && has($page, 'Nothing downloads until you press play'), 'the lesson page shows an audio player that loads only when played');
+ok(has(newBrowser($base)->get("/course/$aiSlug"), 'audio lesson'), 'the public course page lists audio lessons in "What is included"');
+
+// ordering
+$gr->post("/manage/modules/$wk/lessons", ['title' => 'Read: the notes', 'type' => 'reading', 'minutes' => '5', 'content' => 'x', 'video_url' => '']);
+$second = (int)DB::val('SELECT id FROM lessons WHERE module_id = ? AND type = \'reading\'', [$wk]);
+$order = fn() => DB::all('SELECT id FROM lessons WHERE module_id = ? ORDER BY position, id', [$wk]);
+ok(array_column($order(), 'id') == [$lid, $second], 'lessons start in the order they were added');
+$gr->post("/manage/lessons/$second/move", ['dir' => 'up']);
+ok(array_column($order(), 'id') == [$second, $lid], 'a lesson can be moved up');
+$gr->post("/manage/lessons/$second/move", ['dir' => 'down']);
+ok(array_column($order(), 'id') == [$lid, $second], 'and moved back down');
+$weeks = fn() => array_column(DB::all('SELECT id FROM modules WHERE course_id = ? ORDER BY week_no', [$aiId]), 'id');
+$before = $weeks();
+$gr->post("/manage/modules/$wk/move", ['dir' => 'up']);
+$after = $weeks();
+$nums = array_column(DB::all('SELECT week_no FROM modules WHERE course_id = ? ORDER BY week_no', [$aiId]), 'week_no');
+ok($after !== $before && $after[count($after) - 2] === $wk && $nums == range(1, count($nums)), 'a week can be moved up and the week numbers stay 1..n');
+ok(in_array(newBrowser($base, 'david@youthconnect.test', 'Facilitate@123')->post("/manage/lessons/$second/move", ['dir' => 'up'], false)['status'], [403, 404], true) && array_column($order(), 'id') == [$lid, $second], 'another facilitator cannot reorder someone else\'s course');
+
+// discussion moderation
+$fat->post("/learn/$aiSlug/discussion", ['body' => 'Joseph asks: how do I check an AI answer?']);
+$post = (int)DB::val('SELECT id FROM discussion_posts WHERE course_id = ? ORDER BY id DESC LIMIT 1', [$aiId]);
+$mos = newBrowser($base, 'moses@youthconnect.test'); $mos->post("/course/$aiSlug/enroll");
+$r = $mos->post("/learn/$aiSlug/discussion/$post/delete");
+ok(in_array($r['status'], [403], true) && DB::val('SELECT COUNT(*) FROM discussion_posts WHERE id = ?', [$post]) == 1, 'a learner cannot delete someone else\'s post');
+$r = $mos->post("/learn/$aiSlug/discussion/$post/pin");
+ok($r['status'] === 403 && !DB::val('SELECT pinned FROM discussion_posts WHERE id = ?', [$post]), 'a learner cannot pin posts');
+$r = $mos->post("/learn/$aiSlug/discussion/$post/report");
+ok(has($r, 'facilitator has been told') && DB::val('SELECT reported FROM discussion_posts WHERE id = ?', [$post]) == 1, 'a learner can report a post');
+ok((bool)DB::val('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND message LIKE ?', [uid('grace@youthconnect.test'), '%was reported%']), 'the course facilitator is notified of the report');
+$d = $gr->get("/learn/$aiSlug/discussion");
+ok(has($d, 'Reported') && has($d, 'Pin to top') && has($d, 'Clear report'), 'the facilitator sees the report and the moderation tools');
+ok(has($gr->get("/manage/courses/$aiId"), 'reported'), 'the course editor shows how many posts are reported');
+$gr->post("/learn/$aiSlug/discussion/$post/pin");
+ok(DB::val('SELECT pinned FROM discussion_posts WHERE id = ?', [$post]) == 1 && has($gr->get("/learn/$aiSlug/discussion"), 'Pinned by the facilitator'), 'the facilitator can pin a post');
+$gr->post("/learn/$aiSlug/discussion/$post/dismiss");
+ok(DB::val('SELECT reported FROM discussion_posts WHERE id = ?', [$post]) == 0, 'the facilitator can clear a report');
+$gr->post("/learn/$aiSlug/discussion", ['body' => 'Facilitator reply here', 'parent_id' => (string)$post]);
+ok(has($fat->get("/learn/$aiSlug/discussion"), 'Facilitator reply here'), 'staff replies appear under the post');
+$gr->post("/learn/$aiSlug/discussion/$post/delete");
+ok(!DB::val('SELECT COUNT(*) FROM discussion_posts WHERE id = ? OR parent_id = ?', [$post, $post]), 'the facilitator can delete a post and its replies');
+$fat->post("/learn/$aiSlug/discussion", ['body' => 'My own post to delete']);
+$own = (int)DB::val('SELECT id FROM discussion_posts WHERE course_id = ? ORDER BY id DESC LIMIT 1', [$aiId]);
+$fat->post("/learn/$aiSlug/discussion/$own/delete");
+ok(!DB::val('SELECT COUNT(*) FROM discussion_posts WHERE id = ?', [$own]), 'a learner can delete their own post');
+
+// deleting an audio lesson removes the file
+$gr->post("/manage/lessons/$lid/delete");
+ok(\App\Core\Upload::fullPath($apath) === null && !DB::val('SELECT COUNT(*) FROM lessons WHERE id = ?', [$lid]), 'deleting an audio lesson also removes the stored file');
+// ===================================================================================
 section('11. Admin can delete a person (safely)');
 $adm = newBrowser($base, 'admin@youthconnect.test', 'Admin@12345');
 $idOf = fn($email) => (int)DB::val('SELECT id FROM users WHERE email = ?', [$email]);

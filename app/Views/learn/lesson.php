@@ -16,6 +16,11 @@ if ($lesson['video_url'] && preg_match('~(?:youtu\.be/|v=|embed/)([A-Za-z0-9_-]{
       </div>
     <?php endif; ?>
 
+    <?php if ($lesson['type'] === 'audio' && !empty($lesson['audio_path'])): ?>
+      <div class="audio-box"><p class="audio-title">🎧 <?= e($lesson['audio_name'] ?: $lesson['title']) ?></p>
+        <audio controls preload="none" src="<?= e(url('media/lesson/' . (int)$lesson['id'] . '/audio')) ?>">Your browser cannot play audio. Read the notes below instead.</audio>
+        <p class="muted small">Nothing downloads until you press play. Prefer to save data? Read the notes below.</p></div>
+    <?php endif; ?>
     <div class="prose"><?= render_prose((string)$lesson['content']) ?></div>
 
     <?php if ($lesson['type'] === 'discussion'): ?>

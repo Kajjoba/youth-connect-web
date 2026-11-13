@@ -133,3 +133,16 @@ function status_label(string $s): string
 {
     return ucfirst(str_replace('_', ' ', $s));
 }
+
+
+/** Largest audio file (in MB) staff can upload: the smaller of our setting and the web server's PHP limits. */
+function upload_limit_mb(): int
+{
+    $toBytes = function (string $v): int {
+        $v = trim($v); if ($v === '') return PHP_INT_MAX;
+        $n = (int)$v; $u = strtolower(substr($v, -1));
+        return $u === 'g' ? $n * 1073741824 : ($u === 'm' ? $n * 1048576 : ($u === 'k' ? $n * 1024 : $n));
+    };
+    $limit = min((int)config('security.audio_max_bytes'), $toBytes((string)ini_get('upload_max_filesize')), $toBytes((string)ini_get('post_max_size')));
+    return max(1, (int)floor($limit / 1048576));
+}

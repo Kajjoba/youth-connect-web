@@ -65,3 +65,13 @@ Apache or Nginx + PHP-FPM, document root = `public/`. Nginx: `try_files $uri /in
 - The hot reads are the course catalogue and course pages. Add a small cache (APCu/Redis) or CDN for anonymous pages, and a read replica for reporting.
 - Move uploads to object storage (S3-compatible) when running more than one app server.
 - All list screens are paginated and queries use indexes (see `database/schema.sql`).
+
+## Updating a database that already exists (migrations)
+
+New code sometimes needs new columns. Files in `database/migrations/` are run once, in order, on a live database (phpMyAdmin → select the database → **SQL** tab → paste → **Go**). Do this **before** uploading the new code.
+
+| File | Adds |
+|---|---|
+| `002_audio_and_moderation.sql` | audio lessons (`lessons.audio_path`, `audio_name`, type `audio`) and discussion moderation (`discussion_posts.pinned`, `reported`) |
+
+A database created from `database/youthconnect_demo.sql` or `php database/install.php` after this change already includes them.

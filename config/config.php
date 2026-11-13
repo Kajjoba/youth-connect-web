@@ -33,6 +33,7 @@ return [
         'session_minutes'      => 120,
         'password_min'         => 8,
         'upload_max_bytes'     => 5 * 1024 * 1024,
+        'audio_max_bytes'      => 20 * 1024 * 1024,   // lesson audio (the web server's own PHP limit may be lower)
     ],
     // "Continue with Google". Leave empty to hide the button. See docs/GOOGLE_SIGNIN.md.
     'google' => [
