@@ -7,7 +7,7 @@ Built with **PHP 8 + MySQL/MariaDB, no framework**, as the integrated Web Applic
 * **Level Two – Collaborative Virtual Exchange:** participant → team → project → tasks → milestones → evidence → mentoring → assessment → stakeholder validation → certificates and badges.
 * Built for **mobile and slow connections**: small pages, Lite mode, conditional requests, offline-safe drafts.
 
-> Live link: _add your deployed URL here_ · Demo accounts are listed below.
+> Live link: **https://youthconnect.free.nf** (free host: the first visit may show a short browser-check page) · Demo accounts are listed below.
 
 ## Quick start (local)
 
