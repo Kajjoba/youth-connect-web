@@ -1,5 +1,5 @@
 <section class="container narrow section">
-  <div class="certificate" role="article" aria-label="Certificate">
+  <div class="certificate" data-confetti role="article" aria-label="Certificate">
     <div class="cert-inner">
       <p class="cert-brand">YouthConnect Platform</p>
       <p class="muted">This certifies that</p>

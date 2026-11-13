@@ -12,6 +12,7 @@ class HomeController extends Controller
                                FROM categories cat ORDER BY cat.name');
         $popular = Courses::cards('', [], 'enrolled DESC', 8);
         $newest = Courses::cards('', [], 'c.created_at DESC', 8);
+        $agri = Courses::cards('cat.slug = ?', ['agriculture-food'], 'enrolled DESC', 8);
         $stats = [
             'learners' => (int)DB::val('SELECT COUNT(*) FROM users WHERE role = \'participant\''),
             'courses'  => (int)DB::val('SELECT COUNT(*) FROM courses WHERE status = \'published\''),
@@ -23,7 +24,7 @@ class HomeController extends Controller
             $continue = DB::all('SELECT c.title, c.slug, c.color FROM enrollments e JOIN courses c ON c.id = e.course_id
                                  WHERE e.user_id = ? AND e.status = \'active\' ORDER BY e.enrolled_at DESC LIMIT 3', [$this->uid()]);
         }
-        $this->view('home/index', compact('categories', 'popular', 'newest', 'stats', 'continue') + ['title' => 'YouthConnect – Learn, collaborate and be recognised']);
+        $this->view('home/index', compact('categories', 'popular', 'newest', 'agri', 'stats', 'continue') + ['title' => 'YouthConnect – Learn, collaborate and be recognised']);
     }
 
     /** Tiny JSON search used for type-ahead (about 300 bytes) instead of loading a full results page per keystroke. */

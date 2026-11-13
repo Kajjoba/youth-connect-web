@@ -3,7 +3,7 @@
   <div class="container hero-in">
     <div class="hero-text">
       <h1>Learn without limits.<br><span>Build together across borders.</span></h1>
-      <p class="lead">Free digital and AI skills, employability and teamwork for young people in Uganda and across East Africa. Learn at your own pace, then team up on real projects that earn recognised certificates.</p>
+      <p class="lead">Free courses in agriculture, health, clean energy, business, digital and AI skills for young people in Uganda and across East Africa. Learn at your own pace, earn a certificate, then team up on real projects.</p>
       <?php if (!$u): ?>
         <p class="hero-cta"><a class="btn btn-primary btn-lg" href="<?= e(url('register')) ?>">Join for free</a>
         <a class="btn btn-outline btn-lg" href="<?= e(url('courses')) ?>">Explore activities</a></p>
@@ -39,10 +39,10 @@
 <section class="section container">
   <h2>What brings you to YouthConnect today?</h2>
   <div class="goals">
+    <a class="goal" href="<?= e(url('courses?category=agriculture-food')) ?>"><strong>Grow in agriculture</strong><span>Crops, livestock, markets and value addition</span></a>
     <a class="goal" href="<?= e(url('courses?level=Beginner')) ?>"><strong>Start my career</strong><span>Employability and digital basics</span></a>
     <a class="goal" href="<?= e(url('courses?category=ai-digital-literacy')) ?>"><strong>Learn AI skills</strong><span>Use AI tools with confidence</span></a>
     <a class="goal" href="<?= e(url('teams')) ?>"><strong>Collaborate on a project</strong><span>Team up across countries</span></a>
-    <a class="goal" href="<?= e(url('register')) ?>"><strong>Get recognised</strong><span>Certificates and badges</span></a>
   </div>
 </section>
 
@@ -53,14 +53,30 @@
   </div>
 </section>
 
+<?php $icons = ['agriculture-food' => '🌱', 'health-wellbeing' => '🩺', 'climate-energy' => '☀️', 'entrepreneurship' => '💡', 'creative-media' => '🎬', 'data-skills' => '📊',
+  'ai-digital-literacy' => '🤖', 'critical-thinking' => '🧠', 'intercultural-communication' => '🌍', 'collaboration-teamwork' => '🤝', 'employability-career-skills' => '💼']; ?>
 <section class="section container">
-  <h2>Explore categories</h2>
-  <div class="chips">
-    <?php foreach ($categories as $cat): ?>
-      <a class="chip chip-lg" href="<?= e(url('courses?category=' . $cat['slug'])) ?>"><?= e($cat['name']) ?> <span class="muted">(<?= (int)$cat['n'] ?>)</span></a>
+  <h2>Explore by sector</h2>
+  <p class="muted">Whatever you want to build or earn from, start with a free course and finish with a certificate.</p>
+  <div class="sectors">
+    <?php foreach ($categories as $cat): if ((int)$cat['n'] === 0) continue; ?>
+      <a class="sector" href="<?= e(url('courses?category=' . $cat['slug'])) ?>">
+        <span class="sector-ico" aria-hidden="true"><?= $icons[$cat['slug']] ?? '📘' ?></span>
+        <strong><?= e($cat['name']) ?></strong>
+        <span class="muted small"><?= (int)$cat['n'] ?> course<?= $cat['n'] == 1 ? '' : 's' ?></span>
+      </a>
     <?php endforeach; ?>
   </div>
 </section>
+
+<?php if ($agri): ?>
+<section class="section container">
+  <div class="between"><h2>🌱 Agriculture &amp; Food</h2><a href="<?= e(url('courses?category=agriculture-food')) ?>">See all</a></div>
+  <div class="carousel" data-carousel>
+    <?php foreach ($agri as $c): ?><?php include BASE_PATH . '/app/Views/partials/course_card.php'; ?><?php endforeach; ?>
+  </div>
+</section>
+<?php endif; ?>
 
 <section class="section container">
   <div class="between"><h2>New and noteworthy</h2><a href="<?= e(url('courses?sort=newest')) ?>">See all</a></div>

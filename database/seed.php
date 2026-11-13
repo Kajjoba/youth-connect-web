@@ -41,9 +41,9 @@ foreach ($people as [$name, $email, $role, $country, $age, $headline, $exp, $ski
 }
 
 // ---- Categories & courses -----------------------------------------------------------
-$content = require __DIR__ . '/seed_content.php';
+$content = array_merge(require __DIR__ . '/seed_content.php', require __DIR__ . '/seed_content_sectors.php');
 $catIds = [];
-foreach (['AI & Digital Literacy', 'Critical Thinking', 'Intercultural Communication', 'Collaboration & Teamwork', 'Employability & Career Skills', 'Entrepreneurship', 'Data Skills'] as $cn) {
+foreach (['AI & Digital Literacy', 'Critical Thinking', 'Intercultural Communication', 'Collaboration & Teamwork', 'Employability & Career Skills', 'Agriculture & Food', 'Health & Wellbeing', 'Climate & Energy', 'Entrepreneurship', 'Creative & Media', 'Data Skills'] as $cn) {
     $catIds[$cn] = DB::insert('INSERT INTO categories (name, slug) VALUES (?,?)', [$cn, slugify($cn)]);
 }
 $C = [];   // slug => course id

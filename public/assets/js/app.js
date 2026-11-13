@@ -226,7 +226,7 @@
   (function () {
     var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!('IntersectionObserver' in window) || calm || document.body.classList.contains('lite')) return;
-    var els = document.querySelectorAll('.course-card, .enrol-card, .badge-card, .cert-mini, .week');
+    var els = document.querySelectorAll('.course-card, .enrol-card, .badge-card, .cert-mini, .week, .sector');
     if (!els.length) return;
     function drop(list) {
       list.forEach(function (el, n) {
@@ -251,6 +251,49 @@
     setTimeout(onScreen, 80);
     // safety net: never leave visible content hidden if something goes wrong
     setTimeout(onScreen, 2500);
+  })();
+
+  /* ---- Idle float: visible cards drift gently when not being used; off-screen cards stand still (saves battery) ---- */
+  (function () {
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!('IntersectionObserver' in window) || calm || document.body.classList.contains('lite')) return;
+    var timers = new WeakMap();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var el = en.target;
+        clearTimeout(timers.get(el));
+        if (en.isIntersecting) {
+          timers.set(el, setTimeout(function () {          // wait until the drop-in has finished
+            el.style.setProperty('--fd', (5.5 + Math.random() * 3).toFixed(1) + 's');
+            el.style.setProperty('--fl', (-Math.random() * 6).toFixed(1) + 's');   // each card drifts out of step
+            el.classList.add('is-float');
+          }, 1500));
+        } else {
+          el.classList.remove('is-float');
+        }
+      });
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.course-card, .sector, .badge-card, .cert-mini').forEach(function (el) { io.observe(el); });
+  })();
+
+  /* ---- Confetti burst on a certificate ---- */
+  (function () {
+    var host = document.querySelector('[data-confetti]');
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!host || calm || document.body.classList.contains('lite')) return;
+    var colors = ['#0b5cd5', '#f2a900', '#1f8a4c', '#c2571a', '#7a3fc4', '#e11d48'];
+    for (var i = 0; i < 50; i++) {
+      var b = document.createElement('span');
+      b.className = 'confetti-bit';
+      b.style.left = (Math.random() * 100) + 'vw';
+      b.style.background = colors[i % colors.length];
+      b.style.setProperty('--x', ((Math.random() - 0.5) * 160) + 'px');
+      b.style.setProperty('--r', (360 + Math.random() * 720) + 'deg');
+      b.style.setProperty('--t', (2.2 + Math.random() * 1.6) + 's');
+      b.style.setProperty('--dl', (Math.random() * 0.6) + 's');
+      document.body.appendChild(b);
+      setTimeout(function (el) { return function () { if (el.parentNode) el.parentNode.removeChild(el); }; }(b), 5000);
+    }
   })();
 
   /* ---- Service worker: caches the app shell so the site opens fast and works offline ---- */

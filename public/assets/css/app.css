@@ -352,3 +352,18 @@ details p{margin:.5em 0 1em}
 .rv.rv-in{opacity:1;transform:none;transition:opacity .55s ease var(--d,0s),transform .7s cubic-bezier(.34,1.45,.5,1) var(--d,0s)}
 @media (prefers-reduced-motion:reduce){.rv{opacity:1!important;transform:none!important}.course-card,.enrol-card,.thumb-letter{transition:none}.course-card:hover,.enrol-card:hover{transform:none}}
 .lite .rv{opacity:1;transform:none}.lite .course-card:hover,.lite .enrol-card:hover{transform:none}
+
+/* ---- Sectors, idle floating, confetti ---- */
+.sectors{display:grid;gap:12px;grid-template-columns:repeat(2,1fr);margin-top:12px}
+.sector{display:flex;flex-direction:column;gap:4px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;color:var(--text);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,border-color .25s}
+.sector:hover{transform:translateY(-5px);box-shadow:0 12px 24px rgba(16,36,80,.14);border-color:var(--primary);text-decoration:none}
+.sector-ico{font-size:2rem;line-height:1;transition:transform .35s cubic-bezier(.34,1.56,.5,1)}.sector:hover .sector-ico{transform:scale(1.25) rotate(-8deg)}
+@media(min-width:720px){.sectors{grid-template-columns:repeat(3,1fr)}}@media(min-width:1000px){.sectors{grid-template-columns:repeat(4,1fr)}}
+/* idle float: uses the separate translate/rotate properties so it never fights the hover transform */
+@keyframes ycp-float{0%,100%{translate:0 0;rotate:0deg}25%{translate:0 -5px;rotate:.5deg}50%{translate:0 -2px;rotate:0deg}75%{translate:0 -6px;rotate:-.5deg}}
+.is-float{animation:ycp-float var(--fd,7s) ease-in-out var(--fl,0s) infinite;will-change:translate}
+.is-float:hover,.is-float:focus-within,.is-float:active{animation-play-state:paused}
+.sector.is-float{--fd:8s}
+@media (prefers-reduced-motion:reduce){.is-float{animation:none}.confetti-bit{display:none}}.lite .is-float{animation:none}
+.confetti-bit{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;pointer-events:none;z-index:50;animation:ycp-fall var(--t,2.8s) ease-in var(--dl,0s) forwards}
+@keyframes ycp-fall{to{transform:translate3d(var(--x,0),105vh,0) rotate(var(--r,540deg));opacity:.9}}

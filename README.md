@@ -35,6 +35,10 @@ With Docker: `docker compose up --build`, then `docker compose exec web php data
 
 Brian, Wanjiru, Joseph and Aline are on the cross-border team **AgriTech Bridge** (Uganda, Kenya, Tanzania, Rwanda), whose project has mentor feedback waiting: the exact CAT 2 scenario.
 
+## Course catalogue
+
+16 free courses across 11 sectors, each with weekly lessons, a quiz every week, assignments and a verifiable certificate: **Agriculture & Food** (climate-smart farming, post-harvest and value addition, agribusiness, poultry and small livestock), **Health & Wellbeing** (first aid, mental health), **Climate & Energy** (solar and clean cooking), **Entrepreneurship**, **Creative & Media**, **Data Skills**, plus AI & digital literacy, critical thinking, intercultural communication, teamwork and employability. Content lives in `database/seed_content.php` and `database/seed_content_sectors.php`; facilitators can also add courses in the browser (Manage courses).
+
 ## Architecture
 
 ```
