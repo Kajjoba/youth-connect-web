@@ -11,7 +11,9 @@ $u = auth_user();
     <a class="btn btn-outline btn-block" href="<?= e(url('learn/' . $course['slug'])) ?>">Preview as learner</a>
   <?php else: ?><p class="small muted">Enrolment is for participant accounts.</p><?php endif; ?>
 <?php elseif ($enrollment): ?>
-  <a class="btn btn-primary btn-lg btn-block" href="<?= e(url('learn/' . $course['slug'])) ?>"><?= ($progress['pct'] ?? 0) > 0 ? 'Continue learning' : 'Go to course' ?></a>
+  <?php $myCert = $enrollment['status'] === 'completed' ? \App\Core\DB::val('SELECT code FROM certificates WHERE user_id = ? AND course_id = ? AND kind = ?', [$u['id'], $course['id'], 'course']) : null; ?>
+  <?php if ($myCert): ?><a class="btn btn-primary btn-lg btn-block" href="<?= e(url('certificate/' . $myCert . '?download=1')) ?>">🎓 Download my certificate</a><?php endif; ?>
+  <a class="btn <?= $myCert ? 'btn-outline' : 'btn-primary' ?> btn-lg btn-block" href="<?= e(url('learn/' . $course['slug'])) ?>"><?= ($progress['pct'] ?? 0) > 0 ? 'Continue learning' : 'Go to course' ?></a>
   <div class="progress" role="progressbar" aria-valuenow="<?= (int)($progress['pct'] ?? 0) ?>" aria-valuemin="0" aria-valuemax="100"><span style="width:<?= (int)($progress['pct'] ?? 0) ?>%"></span></div>
   <p class="small muted center"><?= (int)($progress['pct'] ?? 0) ?>% complete<?= $enrollment['status'] === 'completed' ? ' · Completed' : '' ?></p>
 <?php else: ?>

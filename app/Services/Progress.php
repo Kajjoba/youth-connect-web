@@ -40,7 +40,8 @@ class Progress
                     DB::run('INSERT IGNORE INTO certificates (code, user_id, kind, course_id, project_id, title) VALUES (?,?,?,?,0,?)',
                         [$code, $userId, 'course', $courseId, 'Certificate of Completion: ' . $c['title']]);
                 }
-                Notify::to($userId, 'Congratulations! You completed "' . ($c['title'] ?? 'your course') . '".', 'my-learning');
+                $certCode = DB::val('SELECT code FROM certificates WHERE user_id = ? AND course_id = ? AND kind = ?', [$userId, $courseId, 'course']);
+                Notify::to($userId, 'Congratulations! You completed "' . ($c['title'] ?? 'your course') . '". Your certificate is ready to download.', $certCode ? 'certificate/' . $certCode : 'my-learning');
             }
         }
         return $s;

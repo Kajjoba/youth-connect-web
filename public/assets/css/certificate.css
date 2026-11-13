@@ -1,0 +1,50 @@
+/* ---- Certificate: landscape, scales with its width (cqw), prints as A4 landscape ---- */
+.cert-page{max-width:1040px}
+.cert-toolbar{display:grid;gap:10px;margin-bottom:14px}
+.cert-toolbar h1{margin:0 0 .15em}
+.cert-actions{display:flex;flex-wrap:wrap;gap:8px}
+.cert-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cert-wrap{filter:drop-shadow(0 14px 30px rgba(15,31,61,.22))}
+.cert{container-type:inline-size;position:relative;overflow:hidden;aspect-ratio:1.414/1;background:#fffdf6;color:#0f1f3d;
+  border:1.5cqw solid #0f1f3d;outline:.35cqw solid #c98e00;outline-offset:-1.5cqw;font-family:Georgia,"Times New Roman",serif}
+.cert:before{content:"";position:absolute;inset:1.3cqw;border:.25cqw solid #c98e00;pointer-events:none}
+.cert-pattern{position:absolute;inset:0;background:
+  radial-gradient(circle at 50% 50%,rgba(242,169,0,.10),transparent 62%),
+  repeating-linear-gradient(45deg,rgba(11,92,213,.035) 0 .6cqw,transparent .6cqw 2.2cqw)}
+.cert-mark{position:absolute;left:50%;top:52%;width:46cqw;translate:-50% -50%;opacity:.055}
+.cert-corner{position:absolute;width:7cqw;height:7cqw}
+.cert-corner.tl{left:2cqw;top:2cqw}.cert-corner.tr{right:2cqw;top:2cqw;transform:scaleX(-1)}
+.cert-corner.bl{left:2cqw;bottom:2cqw;transform:scaleY(-1)}.cert-corner.br{right:2cqw;bottom:2cqw;transform:scale(-1,-1)}
+.cert-body{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:3.4cqw 9cqw 2.6cqw}
+.cert-logo{display:flex;align-items:center;gap:1cqw;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:2.1cqw;color:#0f1f3d;letter-spacing:.04em}
+.cert-logo svg{width:5cqw;height:2.5cqw}.cert-logo b{color:#0b5cd5}
+.cert-title-main{margin:1.3cqw 0 0;font-size:3.1cqw;letter-spacing:.24em;white-space:nowrap;text-transform:uppercase;font-weight:700;color:#0f1f3d;line-height:1.1}
+.cert-divider{display:flex;align-items:center;gap:1.2cqw;margin:1.1cqw 0 1.5cqw;width:34cqw}
+.cert-divider i{flex:1;height:.22cqw;background:linear-gradient(90deg,transparent,#c98e00)}.cert-divider i:last-child{background:linear-gradient(270deg,transparent,#c98e00)}
+.cert-divider b{width:1.2cqw;height:1.2cqw;background:#c98e00;rotate:45deg}
+.cert-small{margin:0;font-size:1.65cqw;color:#4a5670;font-style:italic}
+.cert-name{margin:.5cqw 0 .3cqw;font-family:"Brush Script MT","Segoe Script","Lucida Handwriting","Apple Chancery","URW Chancery L",cursive;font-size:6.6cqw;line-height:1.15;color:#0b3a8f;
+  border-bottom:.22cqw solid #c98e00;padding:0 4cqw .3cqw;max-width:100%;overflow-wrap:anywhere}
+.cert-course{margin:.9cqw 0 .6cqw;font-size:3.5cqw;line-height:1.2;color:#0b5cd5;font-weight:700;max-width:100%}
+.cert-meta{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:1.45cqw;letter-spacing:.08em;text-transform:uppercase;color:#4a5670}
+.cert-skills{margin:.9cqw 0 0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:1.4cqw;color:#33405a;max-width:100%}
+.cert-skills span{background:#0f1f3d;color:#ffd25e;padding:.25cqw .9cqw;border-radius:99px;margin-right:.8cqw;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:1.1cqw}
+.cert-foot{margin-top:auto;width:100%;display:grid;grid-template-columns:1fr 12cqw 1fr;align-items:end;gap:2cqw}
+.cert-sign{display:flex;flex-direction:column;align-items:center}
+.cert-sign .sig{font-family:"Brush Script MT","Segoe Script","Lucida Handwriting",cursive;font-size:2.6cqw;color:#0f1f3d;line-height:1.2;min-height:3cqw}
+.cert-sign .sig.plain{font-family:Georgia,serif;font-size:2cqw;font-style:normal;padding-top:.6cqw}
+.cert-sign i{display:block;width:22cqw;max-width:100%;height:.2cqw;background:#0f1f3d;margin:.3cqw 0 .4cqw}
+.cert-sign small{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:1.2cqw;letter-spacing:.14em;text-transform:uppercase;color:#4a5670}
+.cert-seal{width:11cqw;height:auto;margin:0 auto -.6cqw;filter:drop-shadow(0 .5cqw .8cqw rgba(0,0,0,.25))}
+.cert-id{margin:1.2cqw 0 0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:1.2cqw;color:#4a5670;letter-spacing:.03em}
+.cert-id strong{color:#0f1f3d}
+@media (max-width:560px){.cert-actions .btn{flex:1 1 45%}}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  html,body{background:#fff!important}
+  .cert-page{max-width:none;padding:0;margin:0}
+  .cert-wrap{filter:none}
+  .cert{width:297mm;height:210mm;aspect-ratio:auto;border-color:#0f1f3d;-webkit-print-color-adjust:exact;print-color-adjust:exact;break-inside:avoid}
+  .cert *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .confetti-bit{display:none}
+}

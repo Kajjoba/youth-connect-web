@@ -31,7 +31,18 @@
     if (b && !window.confirm(b.getAttribute('data-confirm-btn'))) e.preventDefault();
     var p = e.target.closest && e.target.closest('[data-print]');
     if (p) window.print();
+    var cp = e.target.closest && e.target.closest('[data-copy]');
+    if (cp) {
+      var text = cp.getAttribute('data-copy'), done = function () { var o = cp.textContent; cp.textContent = 'Link copied ✓'; setTimeout(function () { cp.textContent = o; }, 2000); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { window.prompt('Copy this link:', text); });
+      else window.prompt('Copy this link:', text);
+    }
   });
+
+  /* ---- "Download certificate" links open the print dialog (choose Save as PDF) ---- */
+  if (/[?&]download=1\b/.test(location.search) && document.querySelector('.cert')) {
+    setTimeout(function () { window.print(); }, 900);
+  }
 
   /* ---- Type-ahead search (tiny JSON, only after 2+ letters and a pause) ---- */
   var sInput = $('input[data-suggest]');

@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="<?= e(asset('css/auth.css')) ?>">
 <section class="auth-stage">
 <?php include BASE_PATH . '/app/Views/partials/auth_art.php'; ?>
 <div class="container auth-wrap">

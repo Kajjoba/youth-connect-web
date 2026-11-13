@@ -35,13 +35,14 @@
 
   <?php if ($done): ?>
     <h2>Completed</h2>
-    <ul class="plain list-cards"><?php foreach ($done as $r): ?><li class="card row between"><span>✅ <a href="<?= e(url('course/' . $r['slug'])) ?>"><?= e($r['title']) ?></a></span><span class="muted small">Completed <?= e(time_ago($r['completed_at'])) ?></span></li><?php endforeach; ?></ul>
+    <ul class="plain list-cards"><?php foreach ($done as $r): $cc = $certByCourse[(int)$r['course_id']] ?? null; ?><li class="card row between"><span>✅ <a href="<?= e(url('course/' . $r['slug'])) ?>"><?= e($r['title']) ?></a><br><span class="muted small">Completed <?= e(time_ago($r['completed_at'])) ?></span></span>
+      <?php if ($cc): ?><span class="cert-btns"><a class="btn btn-primary btn-sm" href="<?= e(url('certificate/' . $cc . '?download=1')) ?>">⬇ Download certificate</a> <a class="btn btn-outline btn-sm" href="<?= e(url('certificate/' . $cc)) ?>">View</a></span><?php endif; ?></li><?php endforeach; ?></ul>
   <?php endif; ?>
 
   <?php if ($certs): ?>
     <h2>Certificates</h2>
     <div class="grid grid-2"><?php foreach ($certs as $c): ?>
-      <a class="card cert-mini" href="<?= e(url('certificate/' . $c['code'])) ?>"><strong><?= e($c['title']) ?></strong><span class="muted small"><?= e(date('j M Y', strtotime($c['issued_at']))) ?> · Code <?= e($c['code']) ?></span></a>
+      <div class="card cert-mini"><strong>🎓 <?= e($c['title']) ?></strong><span class="muted small"><?= e(date('j M Y', strtotime($c['issued_at']))) ?> · Code <?= e($c['code']) ?></span><span class="cert-btns"><a class="btn btn-primary btn-sm" href="<?= e(url('certificate/' . $c['code'] . '?download=1')) ?>">⬇ Download</a> <a class="btn btn-outline btn-sm" href="<?= e(url('certificate/' . $c['code'])) ?>">View</a></span></div>
     <?php endforeach; ?></div>
   <?php endif; ?>
 

@@ -15,13 +15,15 @@ class DashboardController extends Controller
                          WHERE e.user_id = ? AND e.status <> \'dropped\' ORDER BY e.status, e.enrolled_at DESC', [$u['id']]);
         foreach ($rows as &$r) $r['progress'] = Progress::summary((int)$u['id'], (int)$r['course_id']);
         unset($r);
-        $certs = DB::all('SELECT code, title, kind, issued_at FROM certificates WHERE user_id = ? ORDER BY issued_at DESC', [$u['id']]);
+        $certs = DB::all('SELECT code, title, kind, issued_at, course_id FROM certificates WHERE user_id = ? ORDER BY issued_at DESC', [$u['id']]);
+        $certByCourse = [];
+        foreach ($certs as $ct) if ($ct['kind'] === 'course') $certByCourse[(int)$ct['course_id']] = $ct['code'];
         $badges = DB::all('SELECT b.name, b.description, b.icon, ub.awarded_at FROM user_badges ub JOIN badges b ON b.id = ub.badge_id WHERE ub.user_id = ?', [$u['id']]);
         $level2 = ['eligible' => Level2::eligible($u), 'done' => Level2::completedCourses((int)$u['id']), 'need' => Level2::required()];
         $myTeams = DB::all('SELECT t.public_id, t.name FROM team_members tm JOIN teams t ON t.id = tm.team_id WHERE tm.user_id = ? AND tm.status = \'active\'', [$u['id']]);
         $invites = (int)DB::val('SELECT COUNT(*) FROM team_members WHERE user_id = ? AND status = \'invited\'', [$u['id']]);
         $suggested = \App\Services\Courses::cards('c.id NOT IN (SELECT course_id FROM enrollments WHERE user_id = ?)', [$u['id']], 'enrolled DESC', 4);
-        $this->view('dashboard/index', compact('rows', 'certs', 'badges', 'level2', 'myTeams', 'invites', 'suggested') + ['title' => 'My learning']);
+        $this->view('dashboard/index', compact('rows', 'certs', 'certByCourse', 'badges', 'level2', 'myTeams', 'invites', 'suggested') + ['title' => 'My learning']);
     }
 
     public function profile(): void

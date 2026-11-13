@@ -10,6 +10,8 @@ foreach ($items as $it) if ([$it['kind'], $it['id']] === $active) $activeModule 
   <?php if (!empty($progress)): ?>
     <div class="progress" role="progressbar" aria-valuenow="<?= (int)$progress['pct'] ?>" aria-valuemin="0" aria-valuemax="100"><span style="width:<?= (int)$progress['pct'] ?>%"></span></div>
     <p class="small muted"><?= (int)$progress['pct'] ?>% complete</p>
+    <?php $sbCert = (int)$progress['pct'] >= 100 && auth_user() ? \App\Core\DB::val('SELECT code FROM certificates WHERE user_id = ? AND course_id = ? AND kind = ?', [auth_user()['id'], $course['id'], 'course']) : null; ?>
+    <?php if ($sbCert): ?><a class="btn btn-primary btn-block" href="<?= e(url('certificate/' . $sbCert . '?download=1')) ?>">🎓 Get your certificate</a><?php endif; ?>
   <?php endif; ?>
   <?php foreach ($syllabus as $m): $list = $byMod[$m['id']] ?? []; $open = $activeModule === null ? $m === reset($syllabus) : $activeModule == $m['id']; ?>
     <details class="pn-week" <?= $open ? 'open' : '' ?>>

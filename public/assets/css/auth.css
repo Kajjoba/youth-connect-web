@@ -1,0 +1,22 @@
+/* ---- Sign-in / join: animated themed background ---- */
+.auth-stage{position:relative;overflow:hidden;min-height:calc(100vh - 150px);display:flex;align-items:center;padding:28px 0;background:linear-gradient(135deg,#e8f0fd 0%,#eef8f1 55%,#fff6dc 100%)}
+.auth-wrap{position:relative;z-index:2;display:grid;gap:28px;width:100%;justify-items:center;align-items:center}
+.auth-stage .auth-card{background:#fff;box-shadow:0 10px 30px rgba(15,31,61,.14);position:relative;z-index:2}
+.auth-pitch{display:none}
+.auth-pitch h2{font-size:2.5rem;line-height:1.1;color:var(--navy);margin:0 0 .4em}
+.pitch-chips{list-style:none;padding:0;margin:18px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+.pitch-chips li{background:rgba(255,255,255,.85);border:1px solid var(--border);border-radius:999px;padding:.45rem .9rem;font-weight:600;font-size:.95rem}
+.auth-art{position:absolute;inset:0;z-index:1;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(38px);opacity:.55;animation:ycp-blob 16s ease-in-out infinite alternate}
+.blob.b1{width:340px;height:340px;background:#9ec5ff;left:-90px;top:-70px}
+.blob.b2{width:360px;height:360px;background:#a7e3bd;right:-80px;bottom:-90px;animation-delay:-6s}
+.blob.b3{width:240px;height:240px;background:#ffd978;left:46%;top:52%;animation-delay:-11s}
+@keyframes ycp-blob{to{translate:70px 46px;scale:1.18}}
+.ico{position:absolute;left:var(--x);top:var(--y);font-size:var(--s);filter:drop-shadow(0 6px 10px rgba(15,31,61,.18));animation:ycp-drift var(--t) ease-in-out var(--d) infinite alternate}
+@keyframes ycp-drift{0%{translate:0 0;rotate:-6deg}50%{translate:14px -24px;rotate:5deg}100%{translate:-12px 12px;rotate:-3deg}}
+@media(max-width:720px){.ico.x{display:none}.ico{font-size:2rem}.blob{filter:blur(28px)}}
+@media(min-width:900px){.auth-wrap{grid-template-columns:1fr 440px;gap:56px;justify-items:stretch}.auth-pitch{display:block}}
+@media (prefers-reduced-motion:reduce){.ico,.blob{animation:none}}
+.lite .auth-art{display:none}.lite .auth-stage{background:var(--soft)}
+.auth-stage{margin-bottom:-40px}   /* cancels the footer's top margin so no white strip shows */
+@media(max-width:720px){.ico{left:var(--mx);top:var(--my)}}
