@@ -25,6 +25,7 @@ $r->post('/register', [AuthController::class, 'register'], ['guest']);
 $r->get('/auth/google', [\App\Controllers\GoogleAuthController::class, 'start'], ['guest']);
 $r->get('/auth/google/callback', [\App\Controllers\GoogleAuthController::class, 'callback'], ['guest']);
 $r->post('/logout', [AuthController::class, 'logout'], $auth);
+$r->get('/media/course/{id}/cover', [\App\Controllers\MediaController::class, 'courseCover']);
 $r->get('/media/lesson/{id}/audio', [\App\Controllers\MediaController::class, 'lessonAudio'], $auth);
 
 // ---- Level One: learner -----------------------------------------------------

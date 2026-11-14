@@ -55,4 +55,21 @@ class MediaController extends Controller
         }
         fclose($fh);
     }
+
+    /** Course cover photo: public for published courses (it appears on cards), staff-only for drafts. Cached by the browser. */
+    public function courseCover(string $id): void
+    {
+        $c = DB::one('SELECT id, owner_id, status, cover_path FROM courses WHERE id = ?', [(int)$id]);
+        if (!$c || !$c['cover_path'] || ($c['status'] !== 'published' && !Policy::manageCourse($c))) { $this->notFound(); return; }
+        $path = Upload::coverPath($c['cover_path']);
+        if (!$path) { $this->notFound(); return; }
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $etag = '"' . md5($c['cover_path']) . '"';
+        header('ETag: ' . $etag);
+        header('Cache-Control: ' . ($c['status'] === 'published' ? 'public' : 'private') . ', max-age=604800');
+        if (($_SERVER['HTTP_IF_NONE_MATCH'] ?? '') === $etag) { http_response_code(304); return; }
+        header('Content-Type: ' . ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'][$ext]);
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+    }
 }

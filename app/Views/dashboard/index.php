@@ -23,7 +23,7 @@
     <div class="grid grid-3">
       <?php foreach ($active as $r): ?>
         <article class="card enrol-card">
-          <div class="thumb thumb-sm" style="--c:<?= e($r['color']) ?>"><span class="thumb-cat"><?= e($r['category']) ?></span></div>
+          <?php $c = $r; $small = true; include BASE_PATH . '/app/Views/partials/thumb.php'; ?>
           <h3><a href="<?= e(url('course/' . $r['slug'])) ?>"><?= e($r['title']) ?></a></h3>
           <div class="progress" role="progressbar" aria-valuenow="<?= (int)$r['progress']['pct'] ?>" aria-valuemin="0" aria-valuemax="100"><span style="width:<?= (int)$r['progress']['pct'] ?>%"></span></div>
           <p class="small muted"><?= (int)$r['progress']['pct'] ?>% · <?= (int)$r['progress']['done'] ?> of <?= (int)$r['progress']['total'] ?> items</p>

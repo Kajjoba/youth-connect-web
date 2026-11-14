@@ -30,7 +30,7 @@
     <button class="btn btn-primary" type="submit">+ Add week</button></form>
 
   <h2>Course details</h2>
-  <form method="post" action="<?= e(url('manage/courses/' . $course['id'])) ?>" novalidate>
+  <form method="post" action="<?= e(url('manage/courses/' . $course['id'])) ?>" enctype="multipart/form-data" novalidate>
     <?= csrf_field() ?>
     <?php include __DIR__ . '/_course_fields.php'; ?>
     <p><button class="btn btn-primary" type="submit">Save details</button></p>

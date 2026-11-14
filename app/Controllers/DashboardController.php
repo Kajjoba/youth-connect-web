@@ -10,7 +10,7 @@ class DashboardController extends Controller
     {
         $u = $this->user();
         if ($u['role'] !== 'participant') { $this->redirect(Lists::homeFor($u['role'])); return; }
-        $rows = DB::all('SELECT e.*, c.title, c.slug, c.color, c.hours_per_week, cat.name AS category
+        $rows = DB::all('SELECT e.*, c.title, c.slug, c.color, c.hours_per_week, c.cover_path, cat.name AS category, cat.slug AS category_slug
                          FROM enrollments e JOIN courses c ON c.id = e.course_id JOIN categories cat ON cat.id = c.category_id
                          WHERE e.user_id = ? AND e.status <> \'dropped\' ORDER BY e.status, e.enrolled_at DESC', [$u['id']]);
         foreach ($rows as &$r) $r['progress'] = Progress::summary((int)$u['id'], (int)$r['course_id']);

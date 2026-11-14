@@ -6,7 +6,7 @@ use App\Core\DB;
 /** Read-side queries for courses, syllabus and the learner's ordered path through a course. */
 class Courses
 {
-    private const CARD_SQL = 'SELECT c.id, c.title, c.slug, c.summary, c.level, c.color, c.hours_per_week, c.status,
+    private const CARD_SQL = 'SELECT c.id, c.title, c.slug, c.summary, c.level, c.color, c.cover_path, c.hours_per_week, c.status,
             cat.name AS category, cat.slug AS category_slug, u.name AS owner,
             (SELECT COUNT(*) FROM modules m WHERE m.course_id = c.id) AS weeks,
             (SELECT COALESCE(AVG(r.rating),0) FROM reviews r WHERE r.course_id = c.id) AS rating,

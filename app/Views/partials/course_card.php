@@ -1,10 +1,7 @@
 <?php /** @var array $c */ ?>
 <article class="course-card">
   <a class="card-link" href="<?= e(url('course/' . $c['slug'])) ?>">
-    <div class="thumb" style="--c:<?= e($c['color']) ?>"<?= lite_mode() ? ' data-lite' : '' ?>>
-      <span class="thumb-cat"><?= e($c['category']) ?></span>
-      <span class="thumb-letter" aria-hidden="true"><?= e(mb_strtoupper(mb_substr($c['title'], 0, 1))) ?></span>
-    </div>
+    <?php $small = false; include BASE_PATH . '/app/Views/partials/thumb.php'; ?>
     <div class="card-body">
       <p class="provider"><?= e($c['owner']) ?> · YouthConnect</p>
       <h3><?= e($c['title']) ?></h3>

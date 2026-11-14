@@ -375,3 +375,19 @@ details p{margin:.5em 0 1em}
 .post.pinned{border-color:var(--accent);background:#fffbea}.pin-tag{font-size:.8rem;font-weight:700;color:var(--warn)}
 .post-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.post-actions .linklike{font-size:.85rem}
 .badge-warn-solid{background:var(--danger-soft);color:var(--danger)}
+
+/* ---- Course pictures: sector artwork by default, optional cover photo ---- */
+.thumb{background-image:var(--art,none),linear-gradient(135deg,var(--c,#0b5cd5),#0f1f3d 150%);background-repeat:no-repeat;background-size:cover,auto;background-position:right center,center}
+.thumb[class*="art-"]::after{display:none}
+.thumb-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.thumb.has-cover::after{display:block;inset:auto 0 0 0;top:auto;right:0;width:auto;height:62%;border-radius:0;background:linear-gradient(transparent,rgba(15,31,61,.62))}
+.course-card:hover .thumb-img{transform:scale(1.07)}
+.cover-current{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:6px 0}.cover-current img{border-radius:8px;border:1px solid var(--border);height:auto;max-width:100%}
+.art-agriculture-food{--art:url(../img/covers/agriculture-food.svg)}.art-health-wellbeing{--art:url(../img/covers/health-wellbeing.svg)}.art-climate-energy{--art:url(../img/covers/climate-energy.svg)}.art-entrepreneurship{--art:url(../img/covers/entrepreneurship.svg)}.art-creative-media{--art:url(../img/covers/creative-media.svg)}.art-data-skills{--art:url(../img/covers/data-skills.svg)}.art-ai-digital-literacy{--art:url(../img/covers/ai-digital-literacy.svg)}.art-critical-thinking{--art:url(../img/covers/critical-thinking.svg)}.art-intercultural-communication{--art:url(../img/covers/intercultural-communication.svg)}.art-collaboration-teamwork{--art:url(../img/covers/collaboration-teamwork.svg)}.art-employability-career-skills{--art:url(../img/covers/employability-career-skills.svg)}.art-default{--art:url(../img/covers/default.svg)}
+.lite .thumb{background-image:none!important}.lite .course-hero::before{display:none}.lite .thumb.has-cover::after{display:none}
+
+.course-hero{position:relative;overflow:hidden}
+.course-hero::before{content:"";position:absolute;inset:0;background:var(--art,none) no-repeat right -10px center/auto 100%;opacity:.38;pointer-events:none}
+.course-hero>.container{position:relative;z-index:1}
+.course-hero.has-photo::before{background:var(--photo) center/cover no-repeat;opacity:.3}
+@media(max-width:899px){.course-hero::before{opacity:.16}}

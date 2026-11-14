@@ -146,3 +146,19 @@ function upload_limit_mb(): int
     $limit = min((int)config('security.audio_max_bytes'), $toBytes((string)ini_get('upload_max_filesize')), $toBytes((string)ini_get('post_max_size')));
     return max(1, (int)floor($limit / 1048576));
 }
+
+
+/** Sector artwork name for a category slug (falls back to the generic artwork for categories without their own). */
+function course_art(?string $categorySlug): string
+{
+    static $known = ['agriculture-food', 'health-wellbeing', 'climate-energy', 'entrepreneurship', 'creative-media', 'data-skills',
+        'ai-digital-literacy', 'critical-thinking', 'intercultural-communication', 'collaboration-teamwork', 'employability-career-skills'];
+    return in_array($categorySlug, $known, true) ? $categorySlug : 'default';
+}
+
+/** URL of a course's cover photo (versioned so a replaced photo shows straight away), or null when it has none or Lite mode is on. */
+function course_cover_url(array $course): ?string
+{
+    if (empty($course['cover_path']) || lite_mode()) return null;
+    return url('media/course/' . (int)($course['course_id'] ?? $course['id']) . '/cover') . '?v=' . substr(md5($course['cover_path']), 0, 8);
+}

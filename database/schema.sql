@@ -59,6 +59,7 @@ CREATE TABLE courses (
   hours_per_week TINYINT UNSIGNED NOT NULL DEFAULT 3,
   language VARCHAR(40) NOT NULL DEFAULT 'English',
   color VARCHAR(7) NOT NULL DEFAULT '#0b5cd5',
+  cover_path VARCHAR(255) NULL,
   has_certificate TINYINT(1) NOT NULL DEFAULT 1,
   pass_mark TINYINT UNSIGNED NOT NULL DEFAULT 70,
   status ENUM('draft','published','archived') NOT NULL DEFAULT 'draft',

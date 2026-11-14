@@ -426,6 +426,53 @@ ok(!DB::val('SELECT COUNT(*) FROM discussion_posts WHERE id = ?', [$own]), 'a le
 $gr->post("/manage/lessons/$lid/delete");
 ok(\App\Core\Upload::fullPath($apath) === null && !DB::val('SELECT COUNT(*) FROM lessons WHERE id = ?', [$lid]), 'deleting an audio lesson also removes the stored file');
 // ===================================================================================
+section('13. Course pictures: sector artwork and cover photos');
+$vis = newBrowser($base);
+$list = $vis->get('/courses?category=agriculture-food');
+ok(has($list, 'art-agriculture-food') && !has($list, 'art-default'), 'cards show the artwork for their sector by default');
+ok($vis->get('/assets/img/covers/agriculture-food.svg')['status'] === 200 && $vis->get('/assets/img/covers/default.svg')['status'] === 200, 'the sector artwork files are served');
+ok(has($vis->get('/'), 'art-climate-energy') && has($vis->get('/'), 'art-health-wellbeing'), 'the home page cards are illustrated too');
+
+$cg = newBrowser($base, 'david@youthconnect.test', 'Facilitate@123');
+$cc = DB::one('SELECT * FROM courses WHERE slug = ?', ['poultry-and-small-livestock-basics']);
+$fields = ['title' => $cc['title'], 'summary' => $cc['summary'], 'description' => $cc['description'], 'what_you_learn' => $cc['what_you_learn'], 'skills' => $cc['skills'],
+           'level' => $cc['level'], 'hours_per_week' => $cc['hours_per_week'], 'language' => $cc['language'], 'category_id' => $cc['category_id'], 'pass_mark' => $cc['pass_mark'], 'color' => $cc['color'], 'has_certificate' => '1'];
+$png = sys_get_temp_dir() . '/ycp_cover.png';
+$im = imagecreatetruecolor(1600, 900); imagefill($im, 0, 0, imagecolorallocate($im, 30, 120, 60)); imagefilledellipse($im, 800, 450, 500, 500, imagecolorallocate($im, 240, 200, 40)); imagepng($im, $png);
+$notimg = sys_get_temp_dir() . '/ycp_notimg.jpg'; file_put_contents($notimg, 'this is text, not a picture');
+$r = $cg->post('/manage/courses/' . $cc['id'], $fields + ['cover' => new CURLFile($notimg, 'image/jpeg', 'x.jpg')]);
+ok(has($r, 'does not match') && !DB::val('SELECT cover_path FROM courses WHERE id = ?', [$cc['id']]), 'a file that is not really an image is refused');
+$r = $cg->post('/manage/courses/' . $cc['id'], $fields + ['cover' => new CURLFile($png, 'image/png', 'farm.png')]);
+$cover = DB::val('SELECT cover_path FROM courses WHERE id = ?', [$cc['id']]);
+$cpath = \App\Core\Upload::coverPath($cover);
+ok(has($r, 'Course details saved') && $cover && $cpath, 'a facilitator can upload a cover photo for their course');
+$info = $cpath ? getimagesize($cpath) : [0, 0, 0, 'mime' => ''];
+ok($info[0] > 0 && $info[0] <= 960 && ($info['mime'] ?? '') === 'image/jpeg', 'the photo is shrunk to at most 960 px wide and saved as JPEG (light on mobile data)', "{$info[0]}x{$info[1]}");
+ok(!is_file(__DIR__ . '/../public/' . $cover), 'the stored photo is outside the web root');
+$img = $vis->get("/media/course/{$cc['id']}/cover");
+ok($img['status'] === 200 && ($img['headers']['content-type'] ?? '') === 'image/jpeg' && strpos($img['headers']['cache-control'] ?? '', 'public') !== false, 'visitors can load the cover of a published course (cacheable)');
+$etag = $img['headers']['etag'] ?? '';
+ok($etag !== '' && $vis->req('GET', "/media/course/{$cc['id']}/cover", [], ['If-None-Match: ' . $etag], false)['status'] === 304, 'a repeat visit costs no data (304 Not Modified)');
+$list = $vis->get('/courses?category=agriculture-food');
+ok(has($list, 'thumb-img') && has($list, "media/course/{$cc['id']}/cover?v="), 'the card shows the uploaded photo');
+ok(has($vis->get('/course/poultry-and-small-livestock-basics'), 'has-photo'), 'the course page header uses the photo');
+$vis->post('/lite', ['lite' => '1']);
+ok(!has($vis->get('/courses?category=agriculture-food'), 'thumb-img'), 'Lite mode skips photos to save data');
+$vis->post('/lite', ['lite' => '0']);
+$cg->post('/manage/courses/' . $cc['id'] . '/status', ['status' => 'draft']);
+ok(newBrowser($base)->get("/media/course/{$cc['id']}/cover", [], false)['status'] === 404, 'the cover of an unpublished course is not public');
+ok($cg->get("/media/course/{$cc['id']}/cover")['status'] === 200, 'but its facilitator can still see it');
+$cg->post('/manage/courses/' . $cc['id'] . '/status', ['status' => 'published']);
+$old = $cover;
+$cg->post('/manage/courses/' . $cc['id'], $fields + ['cover' => new CURLFile($png, 'image/png', 'again.png')]);
+$cover2 = DB::val('SELECT cover_path FROM courses WHERE id = ?', [$cc['id']]);
+ok($cover2 && $cover2 !== $old && \App\Core\Upload::coverPath($old) === null, 'replacing the photo deletes the old file');
+$cg->post('/manage/courses/' . $cc['id'], $fields + ['remove_cover' => '1']);
+ok(!DB::val('SELECT cover_path FROM courses WHERE id = ?', [$cc['id']]) && \App\Core\Upload::coverPath($cover2) === null, 'the photo can be removed to go back to the sector artwork');
+ok(has($vis->get('/courses?category=agriculture-food'), 'art-agriculture-food'), 'and the card falls back to the artwork');
+$other = newBrowser($base, 'grace@youthconnect.test', 'Facilitate@123');
+ok(in_array($other->post('/manage/courses/' . $cc['id'], $fields + ['cover' => new CURLFile($png, 'image/png', 'x.png')], false)['status'], [403, 404], true) && !DB::val('SELECT cover_path FROM courses WHERE id = ?', [$cc['id']]), 'another facilitator cannot change this course\'s photo');
+// ===================================================================================
 section('11. Admin can delete a person (safely)');
 $adm = newBrowser($base, 'admin@youthconnect.test', 'Admin@12345');
 $idOf = fn($email) => (int)DB::val('SELECT id FROM users WHERE email = ?', [$email]);

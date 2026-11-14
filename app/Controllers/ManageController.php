@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-use App\Core\{Controller, DB, Policy, Audit, Notify, Upload};
+use App\Core\{Controller, DB, Policy, Audit, Notify, Upload, Session};
 use App\Services\Progress;
 
 /** Facilitator (and admin) tools: build courses week by week, quizzes, assignments; grade work. */
@@ -69,10 +69,12 @@ class ManageController extends Controller
         $slug = slugify($d['title']);
         if (DB::val('SELECT id FROM courses WHERE slug = ?', [$slug])) $slug .= '-' . substr(bin2hex(random_bytes(3)), 0, 5);
         $color = preg_match('/^#[0-9a-fA-F]{6}$/', $_POST['color'] ?? '') ? $_POST['color'] : '#0b5cd5';
-        $id = DB::insert('INSERT INTO courses (category_id, owner_id, title, slug, summary, description, what_you_learn, skills, level, hours_per_week, language, color, pass_mark, has_certificate)
-                          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        $cover = $this->coverUpload();
+        if (is_string($cover)) { flash('error', $cover); Session::withErrors([], array_diff_key($_POST, ['_csrf' => 1])); $this->redirect('manage/courses/new'); return; }
+        $id = DB::insert('INSERT INTO courses (category_id, owner_id, title, slug, summary, description, what_you_learn, skills, level, hours_per_week, language, color, cover_path, pass_mark, has_certificate)
+                          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
             [$d['category_id'], $this->uid(), $d['title'], $slug, $d['summary'], $d['description'], $d['what_you_learn'], $d['skills'], $d['level'],
-             $d['hours_per_week'], $d['language'], $color, $d['pass_mark'], isset($_POST['has_certificate']) ? 1 : 0]);
+             $d['hours_per_week'], $d['language'], $color, $cover['path'] ?? null, $d['pass_mark'], isset($_POST['has_certificate']) ? 1 : 0]);
         Audit::log('course.created', 'course', $id);
         flash('success', 'Course created. Now add its weeks, lessons and quizzes.');
         $this->redirect("manage/courses/$id");
@@ -97,8 +99,13 @@ class ManageController extends Controller
         $d = $this->validate($this->courseRules(), "manage/courses/{$course['id']}", ['what_you_learn' => 'what learners will learn', 'category_id' => 'a category']);
         if ($d === null) return;
         $color = preg_match('/^#[0-9a-fA-F]{6}$/', $_POST['color'] ?? '') ? $_POST['color'] : $course['color'];
-        DB::run('UPDATE courses SET category_id=?, title=?, summary=?, description=?, what_you_learn=?, skills=?, level=?, hours_per_week=?, language=?, color=?, pass_mark=?, has_certificate=? WHERE id=?',
-            [$d['category_id'], $d['title'], $d['summary'], $d['description'], $d['what_you_learn'], $d['skills'], $d['level'], $d['hours_per_week'], $d['language'], $color, $d['pass_mark'], isset($_POST['has_certificate']) ? 1 : 0, $course['id']]);
+        $cover = $course['cover_path'];
+        $new = $this->coverUpload();
+        if (is_string($new)) { flash('error', $new); $this->redirect("manage/courses/{$course['id']}"); return; }
+        if ($new) { Upload::deleteCover($cover); $cover = $new['path']; }
+        elseif (isset($_POST['remove_cover']) && $cover) { Upload::deleteCover($cover); $cover = null; }
+        DB::run('UPDATE courses SET category_id=?, title=?, summary=?, description=?, what_you_learn=?, skills=?, level=?, hours_per_week=?, language=?, color=?, cover_path=?, pass_mark=?, has_certificate=? WHERE id=?',
+            [$d['category_id'], $d['title'], $d['summary'], $d['description'], $d['what_you_learn'], $d['skills'], $d['level'], $d['hours_per_week'], $d['language'], $color, $cover, $d['pass_mark'], isset($_POST['has_certificate']) ? 1 : 0, $course['id']]);
         flash('success', 'Course details saved.');
         $this->redirect("manage/courses/{$course['id']}");
     }
@@ -214,6 +221,13 @@ class ManageController extends Controller
         $this->redirect("manage/modules/{$m['id']}");
     }
 
+    /** Optional cover photo from the course form: null if none chosen, an error string, or ['path' => ...]. */
+    private function coverUpload()
+    {
+        $f = $_FILES['cover'] ?? null;
+        if (!$f || ($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return null;
+        return Upload::storeImage($f);
+    }
     /** Audio file from the lesson form: null if none was chosen (and none required), error string, or the stored-file info. */
     private function audioUpload(bool $required)
     {

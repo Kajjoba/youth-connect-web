@@ -74,4 +74,6 @@ New code sometimes needs new columns. Files in `database/migrations/` are run on
 |---|---|
 | `002_audio_and_moderation.sql` | audio lessons (`lessons.audio_path`, `audio_name`, type `audio`) and discussion moderation (`discussion_posts.pinned`, `reported`) |
 
+| `003_course_cover.sql` | course cover photos (`courses.cover_path`) |
+
 A database created from `database/youthconnect_demo.sql` or `php database/install.php` after this change already includes them.

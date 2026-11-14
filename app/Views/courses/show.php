@@ -6,7 +6,8 @@ $asgCount = count(array_filter($syllabus, fn($m) => $m['assignment']));
 $lessonCount = array_sum(array_map(fn($m) => count($m['lessons']), $syllabus));
 $totalReviews = max(1, array_sum($dist));
 ?>
-<section class="course-hero" style="--c:<?= e($course['color']) ?>">
+<?php $heroPhoto = course_cover_url($course); ?>
+<section class="course-hero art-<?= e(course_art($course['category_slug'] ?? null)) ?><?= $heroPhoto ? ' has-photo' : '' ?>" style="--c:<?= e($course['color']) ?><?= $heroPhoto ? ';--photo:url(' . e($heroPhoto) . ')' : '' ?>">
   <div class="container course-hero-in">
     <div class="course-hero-main">
       <p class="crumbs small"><a href="<?= e(url('courses')) ?>">Explore</a> / <a href="<?= e(url('courses?category=' . $course['category_slug'])) ?>"><?= e($course['category']) ?></a></p>
