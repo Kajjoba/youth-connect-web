@@ -1,7 +1,7 @@
 <?php $by = fn(array $rows, string $k) => array_column($rows, 'n', $k); $roles = $by($s['users'], 'role'); $projects = $by($s['projects'], 'status'); $courses = $by($s['courses'], 'status'); $max = max(1, ...array_column($s['countries'], 'n') ?: [1]); ?>
 <section class="container section">
   <h1>Programme dashboard</h1>
-  <?php if (!empty($s['needMentor'])): ?><div class="card callout"><div><strong><?= (int)$s['needMentor'] ?> project<?= $s['needMentor'] == 1 ? '' : 's' ?> need a mentor</strong><p class="muted">The team is waiting for someone to review its work.</p></div><a class="btn btn-primary" href="<?= e(url('admin/projects')) ?>">Assign mentors</a></div><?php endif; ?>
+  <?php if (!empty($s['needMentor'])): ?><div class="card callout"><div><strong><?= (int)$s['needMentor'] ?> <?= $s['needMentor'] == 1 ? 'project needs' : 'projects need' ?> a mentor</strong><p class="muted">The team is waiting for someone to review its work.</p></div><a class="btn btn-primary" href="<?= e(url('admin/projects')) ?>">Assign mentors</a></div><?php endif; ?>
   <div class="grid grid-4 stats">
     <div class="card stat"><strong><?= array_sum($roles) ?></strong><span>Users</span><small><?= (int)($roles['participant'] ?? 0) ?> participants</small></div>
     <div class="card stat"><strong><?= (int)$s['enrolments'] ?></strong><span>Enrolments</span><small><?= (int)$s['completions'] ?> completed</small></div>

@@ -487,7 +487,7 @@ $notesBefore = (int)DB::val($noteSql, [$adminId, '%waiting for a mentor%']);
 $r = $lead->post('/projects/' . $bore['public_id'] . '/transition', ['action' => 'submit_proposal']);
 ok(DB::val('SELECT status FROM projects WHERE id = ?', [$bore['id']]) === 'proposed', 'the team lead submits the proposal');
 ok((int)DB::val($noteSql, [$adminId, '%waiting for a mentor%']) === $notesBefore + 1, 'the administrator is notified that a proposal has no mentor');
-ok(has($adm14->get('/admin'), 'need a mentor'), 'the admin dashboard says how many projects need a mentor');
+ok((bool)preg_match('/\d+ projects? needs? a mentor/', (string)$adm14->get('/admin')['body']), 'the admin dashboard says how many projects need a mentor');
 $list = $adm14->get('/admin/projects');
 ok(has($list, 'Needs a mentor') && has($list, 'Assign a mentor') && has($list, 'projects/' . $bore['public_id'] . '#mentors'), 'the project list flags it and links straight to the assignment box');
 $page = $adm14->get('/projects/' . $bore['public_id']);
