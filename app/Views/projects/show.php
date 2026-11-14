@@ -82,7 +82,7 @@ $lastMsg = (int)\App\Core\DB::val('SELECT COALESCE(MAX(id),0) FROM project_messa
       <div class="card"><h3>Team</h3>
         <ul class="plain"><?php foreach ($members as $m): ?><li><strong><?= e($m['name']) ?></strong><?= $m['role'] === 'lead' ? ' <span class="badge">Lead</span>' : '' ?><br><span class="muted small"><?= e($m['country'] ?: '') ?><?= $m['discipline'] ? ' · ' . e($m['discipline']) : '' ?></span></li><?php endforeach; ?></ul>
         <p class="small muted"><?= count($countries) ?> countr<?= count($countries) == 1 ? 'y' : 'ies' ?>: <?= e(implode(', ', $countries)) ?></p></div>
-      <div class="card"><h3>Mentors &amp; reviewers</h3>
+      <div class="card" id="mentors"><h3>Mentors &amp; reviewers</h3>
         <?php if (!$staff): ?><p class="muted small">No mentor assigned yet.</p><?php endif; ?>
         <ul class="plain"><?php foreach ($staff as $s): ?><li><?= e($s['name']) ?> <span class="badge"><?= e(ucfirst($s['role'])) ?></span></li><?php endforeach; ?></ul>
         <?php if (!empty($assignable)): ?>

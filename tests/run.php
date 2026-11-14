@@ -473,6 +473,37 @@ ok(has($vis->get('/courses?category=agriculture-food'), 'art-agriculture-food'),
 $other = newBrowser($base, 'grace@youthconnect.test', 'Facilitate@123');
 ok(in_array($other->post('/manage/courses/' . $cc['id'], $fields + ['cover' => new CURLFile($png, 'image/png', 'x.png')], false)['status'], [403, 404], true) && !DB::val('SELECT cover_path FROM courses WHERE id = ?', [$cc['id']]), 'another facilitator cannot change this course\'s photo');
 // ===================================================================================
+section('14. A proposal reaches an administrator, who assigns the mentor');
+$lead = newBrowser($base, 'moses@youthconnect.test');
+$adm14 = newBrowser($base, 'admin@youthconnect.test', 'Admin@12345');
+$bore = DB::one('SELECT id, public_id FROM projects WHERE title = ?', ['Borehole Water Quality Map']);
+DB::run('UPDATE projects SET problem = ?, solution = ?, impact = ? WHERE id = ?', [
+    'Communities cannot tell which boreholes have been tested and whether the water is safe.',
+    'A shared map that shows test dates and results for each borehole in the district.',
+    'Families and health workers can choose safer water points and spot problems sooner.', $bore['id']]);
+$noteSql = 'SELECT COUNT(*) FROM notifications WHERE user_id = ? AND message LIKE ?';
+$adminId = uid('admin@youthconnect.test');
+$notesBefore = (int)DB::val($noteSql, [$adminId, '%waiting for a mentor%']);
+$r = $lead->post('/projects/' . $bore['public_id'] . '/transition', ['action' => 'submit_proposal']);
+ok(DB::val('SELECT status FROM projects WHERE id = ?', [$bore['id']]) === 'proposed', 'the team lead submits the proposal');
+ok((int)DB::val($noteSql, [$adminId, '%waiting for a mentor%']) === $notesBefore + 1, 'the administrator is notified that a proposal has no mentor');
+ok(has($adm14->get('/admin'), 'need a mentor'), 'the admin dashboard says how many projects need a mentor');
+$list = $adm14->get('/admin/projects');
+ok(has($list, 'Needs a mentor') && has($list, 'Assign a mentor') && has($list, 'projects/' . $bore['public_id'] . '#mentors'), 'the project list flags it and links straight to the assignment box');
+$page = $adm14->get('/projects/' . $bore['public_id']);
+ok(has($page, 'id="mentors"') && has($page, 'Assign someone') && has($page, 'Review this proposal'), 'the project page has the Assign someone box and the review form for the admin');
+ok(in_array($lead->post('/projects/' . $bore['public_id'] . '/staff', ['user_id' => uid('amina@youthconnect.test')], false)['status'], [302, 403], true)
+   && !DB::val('SELECT COUNT(*) FROM project_staff WHERE project_id = ?', [$bore['id']]), 'a team member cannot assign their own mentor');
+$adm14->post('/projects/' . $bore['public_id'] . '/staff', ['user_id' => uid('amina@youthconnect.test')]);
+ok(DB::val('SELECT role FROM project_staff WHERE project_id = ? AND user_id = ?', [$bore['id'], uid('amina@youthconnect.test')]) === 'mentor', 'the admin assigns a mentor');
+ok((bool)DB::val($noteSql, [uid('amina@youthconnect.test'), '%assigned as mentor%Borehole%']), 'the mentor is notified of the assignment');
+$mentor14 = newBrowser($base, 'amina@youthconnect.test', 'Mentor@12345');
+ok(has($mentor14->get('/staff/projects'), 'Borehole Water Quality Map'), 'the project appears in the mentor\'s assigned list');
+$row = preg_match('#Borehole Water Quality Map.*?</tr>#s', (string)$adm14->get('/admin/projects')['body'], $mm) ? $mm[0] : '';
+ok($row !== '' && strpos($row, 'Needs a mentor') === false && strpos($row, 'Amina Mwangi') !== false, 'its row now shows the mentor instead of the "needs a mentor" flag');
+$r = $mentor14->post('/projects/' . $bore['public_id'] . '/transition', ['action' => 'approve', 'comment' => 'Good plan. Start with ten boreholes in one district.']);
+ok(DB::val('SELECT status FROM projects WHERE id = ?', [$bore['id']]) === 'approved', 'the mentor approves the proposal');
+// ===================================================================================
 section('11. Admin can delete a person (safely)');
 $adm = newBrowser($base, 'admin@youthconnect.test', 'Admin@12345');
 $idOf = fn($email) => (int)DB::val('SELECT id FROM users WHERE email = ?', [$email]);

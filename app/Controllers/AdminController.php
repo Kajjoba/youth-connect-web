@@ -17,6 +17,7 @@ class AdminController extends Controller
             'projects'    => DB::all('SELECT status, COUNT(*) n FROM projects GROUP BY status'),
             'countries'   => DB::all('SELECT country, COUNT(*) n FROM profiles WHERE country IS NOT NULL GROUP BY country ORDER BY n DESC'),
             'certs'       => (int)DB::val('SELECT COUNT(*) FROM certificates'),
+            'needMentor'  => (int)DB::val('SELECT COUNT(*) FROM projects p WHERE p.status NOT IN (\'draft\', \'completed\') AND NOT EXISTS (SELECT 1 FROM project_staff ps WHERE ps.project_id = p.id)'),
         ];
         $this->view('admin/dashboard', ['s' => $s, 'title' => 'Admin dashboard']);
     }
@@ -150,8 +151,9 @@ class AdminController extends Controller
     public function projects(): void
     {
         $rows = DB::all('SELECT p.public_id, p.title, p.status, t.name AS team,
-                (SELECT GROUP_CONCAT(CONCAT(u.name, " (", ps.role, ")") SEPARATOR ", ") FROM project_staff ps JOIN users u ON u.id = ps.user_id WHERE ps.project_id = p.id) AS staff
-            FROM projects p JOIN teams t ON t.id = p.team_id ORDER BY p.updated_at DESC LIMIT 200');
+                (SELECT GROUP_CONCAT(CONCAT(u.name, " (", ps.role, ")") SEPARATOR ", ") FROM project_staff ps JOIN users u ON u.id = ps.user_id WHERE ps.project_id = p.id) AS staff,
+                (p.status NOT IN (\'draft\', \'completed\') AND NOT EXISTS (SELECT 1 FROM project_staff ps WHERE ps.project_id = p.id)) AS needs_mentor
+            FROM projects p JOIN teams t ON t.id = p.team_id ORDER BY needs_mentor DESC, p.updated_at DESC LIMIT 200');
         $this->view('admin/projects', ['rows' => $rows, 'title' => 'All projects']);
     }
 

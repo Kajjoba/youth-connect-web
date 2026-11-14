@@ -136,7 +136,15 @@ class ProjectController extends Controller
                 if ($members < 2) $err = 'A collaborative project needs at least 2 team members.';
                 elseif (mb_strlen((string)$p['problem']) < 30 || mb_strlen((string)$p['solution']) < 30 || mb_strlen((string)$p['impact']) < 30) $err = 'Describe the problem, your solution and the expected impact (at least a couple of sentences each) before submitting.';
                 elseif (!in_array($p['status'], ['draft', 'changes_requested'], true)) $err = 'The proposal was already submitted.';
-                else $ok = $this->move($p, $p['status'], 'proposed', 'Proposal "' . $p['title'] . '" was submitted for review.');
+                else {
+                    $ok = $this->move($p, $p['status'], 'proposed', 'Proposal "' . $p['title'] . '" was submitted for review.');
+                    // Nobody reviews a proposal until staff are assigned, so tell the administrators.
+                    if ($ok && !DB::val('SELECT COUNT(*) FROM project_staff WHERE project_id = ?', [$id])) {
+                        foreach (DB::all('SELECT id FROM users WHERE role = \'admin\' AND status = \'active\'') as $a) {
+                            Notify::to((int)$a['id'], 'The proposal "' . $p['title'] . '" is waiting for a mentor. Please assign one.', 'projects/' . $p['public_id'] . '#mentors');
+                        }
+                    }
+                }
                 break;
 
             case 'approve':
